@@ -9,18 +9,18 @@ Sistema para apoiar a secretaria na gestão acadêmica, os alunos na realizaçã
 
 ## Histórias de usuário
 
-As histórias seguem o formato **Como [perfil], quero [funcionalidade], para [benefício]**. Cada história está associada ao requisito funcional e ao caso de uso correspondente. As prioridades foram mantidas conforme o documento de requisitos.
-
+As histórias seguem o formato **Como [perfil], quero [funcionalidade], para [benefício]**. Cada história está associada ao requisito funcional e ao caso de uso correspondente ou proposto (HU-001 a HU-018).
 ### Perfis e relações entre os casos de uso
 
-| Perfil | Responsabilidades |
+| Perfil ou ator | Responsabilidades |
 | --- | --- |
 | Usuário | Autenticar-se no sistema. É o perfil comum a alunos, professores e funcionários da secretaria. |
 | Secretaria | Gerenciar os cadastros acadêmicos, definir o currículo do semestre e consultar matrículas e a situação das disciplinas. |
 | Aluno | Realizar e cancelar matrículas, selecionar disciplinas e consultar suas matrículas, seu histórico e os dados das disciplinas. |
 | Professor | Consultar as disciplinas sob sua responsabilidade e os respectivos alunos matriculados. |
+| Sistema de cobranças | Ator externo que recebe a notificação da inscrição do aluno no semestre para realizar a cobrança das disciplinas. |
 
-As histórias HU-002 a HU-017 pressupõem que o usuário esteja autenticado no perfil indicado. Os requisitos não funcionais apresentados ao final complementam os critérios de aceitação das histórias às quais se aplicam.
+As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no perfil indicado. Os requisitos não funcionais apresentados ao final complementam os critérios de aceitação das histórias às quais se aplicam.
 
 ### Usuário
 
@@ -140,6 +140,7 @@ As histórias HU-002 a HU-017 pressupõem que o usuário esteja autenticado no p
 2. O processo deve incluir a seleção de disciplinas obrigatórias descrita na HU-011 e permitir a seleção opcional de disciplinas optativas descrita na HU-012, respeitando RN-001 e RN-002.
 3. A quantidade de alunos matriculados em uma disciplina não pode ultrapassar 60. Uma nova matrícula em uma disciplina que já tenha 60 alunos deve ser impedida, conforme RN-007.
 4. Uma matrícula realizada com sucesso deve aparecer na consulta de matrículas do aluno, descrita na HU-013.
+5. Após a conclusão da inscrição do aluno no semestre, o sistema de matrículas deve notificar o sistema de cobranças, conforme a HU-018.
 
 #### HU-010 — Cancelar matrícula
 
@@ -241,6 +242,25 @@ As histórias HU-002 a HU-017 pressupõem que o usuário esteja autenticado no p
 1. O professor deve conseguir consultar os alunos matriculados em uma de suas disciplinas.
 2. A consulta deve apresentar os alunos matriculados na disciplina consultada, refletindo as matrículas realizadas e os cancelamentos efetuados.
 3. Quando a disciplina não possuir alunos matriculados, a consulta deve indicar essa situação.
+
+### Integração com o sistema de cobranças
+
+#### HU-018 — Solicitar geração de cobrança
+
+**Como** aluno, **quero** que minha inscrição no semestre seja comunicada automaticamente ao sistema de cobranças, **para** que eu possa ser cobrado pelas disciplinas em que me matriculei naquele semestre.
+
+**Requisito:** RF-018 · **Caso de uso proposto:** Solicitar geração de cobrança · **Prioridade:** Alta.
+
+**Descrição do RF-018:** Após a conclusão da inscrição de um aluno no semestre, o sistema de matrículas deve notificar o sistema de cobranças para possibilitar a cobrança das disciplinas daquele semestre.
+
+Este requisito complementa os documentos de referência e ainda deve ser incorporado ao PDF de requisitos e ao diagrama de casos de uso.
+
+**Critérios de aceitação:**
+
+1. A conclusão da inscrição do aluno no semestre deve disparar automaticamente a notificação ao sistema de cobranças.
+2. A notificação deve permitir identificar o aluno, o semestre e as disciplinas em que ele efetivamente se matriculou.
+3. Uma inscrição que não tenha sido concluída não deve disparar a notificação de conclusão ao sistema de cobranças.
+4. O envio deve ocorrer como parte do fluxo de matrícula, sem exigir uma ação adicional do aluno para solicitar a notificação.
 
 ## Regras de negócio associadas às histórias
 
