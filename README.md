@@ -9,18 +9,21 @@ Sistema para apoiar a secretaria na gestão acadêmica, os alunos na realizaçã
 
 ## Histórias de usuário
 
-As histórias seguem o formato **Como [perfil], quero [funcionalidade], para [benefício]**. Cada história está associada ao requisito funcional e ao caso de uso correspondente ou proposto (HU-001 a HU-018).
+As histórias seguem o formato **Como [perfil], quero [funcionalidade], para [benefício]**. As histórias HU-001 a HU-018 correspondem aos requisitos RF-001 a RF-018, mantendo as prioridades do documento de requisitos. Os casos de uso das 18 histórias estão representados no diagrama atual, incluindo a integração com o sistema de cobranças descrita na HU-018.
+
 ### Perfis e relações entre os casos de uso
 
 | Perfil ou ator | Responsabilidades |
 | --- | --- |
 | Usuário | Autenticar-se no sistema. É o perfil comum a alunos, professores e funcionários da secretaria. |
 | Secretaria | Gerenciar os cadastros acadêmicos, definir o currículo do semestre e consultar matrículas e a situação das disciplinas. |
-| Aluno | Realizar e cancelar matrículas, selecionar disciplinas e consultar suas matrículas, seu histórico e os dados das disciplinas. |
+| Aluno | Realizar e cancelar matrículas, selecionar disciplinas, consultar sua matrícula atual, os detalhes das disciplinas matriculadas e o histórico de disciplinas cursadas. |
 | Professor | Consultar as disciplinas sob sua responsabilidade e os respectivos alunos matriculados. |
-| Sistema de cobranças | Ator externo que recebe a notificação da inscrição do aluno no semestre para realizar a cobrança das disciplinas. |
+| Sistema de cobrança | Ator externo associado ao caso de uso Solicitar geração de cobrança, que recebe a notificação da inscrição do aluno no semestre para realizar a cobrança das disciplinas, conforme RF-018. |
 
-As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no perfil indicado. Os requisitos não funcionais apresentados ao final complementam os critérios de aceitação das histórias às quais se aplicam.
+No diagrama, **Realizar matrícula** inclui (`<<include>>`) **Selecionar disciplinas obrigatórias** e **Solicitar geração de cobrança**. A solicitação de cobrança ocorre após a conclusão da inscrição no semestre, conforme RF-018. **Selecionar disciplinas optativas** estende (`<<extend>>`) **Realizar matrícula**, representando uma seleção opcional durante esse processo.
+
+As histórias HU-002 a HU-017 pressupõem que o usuário esteja autenticado no perfil indicado. A HU-018 é acionada automaticamente após a conclusão da inscrição do aluno no semestre. Os requisitos não funcionais apresentados ao final complementam os critérios de aceitação das histórias às quais se aplicam.
 
 ### Usuário
 
@@ -139,7 +142,7 @@ As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no p
 1. O aluno deve conseguir realizar matrícula em disciplinas disponíveis enquanto o período de matrícula estiver aberto; fora desse período, novas matrículas devem ser impedidas, conforme RN-003.
 2. O processo deve incluir a seleção de disciplinas obrigatórias descrita na HU-011 e permitir a seleção opcional de disciplinas optativas descrita na HU-012, respeitando RN-001 e RN-002.
 3. A quantidade de alunos matriculados em uma disciplina não pode ultrapassar 60. Uma nova matrícula em uma disciplina que já tenha 60 alunos deve ser impedida, conforme RN-007.
-4. Uma matrícula realizada com sucesso deve aparecer na consulta de matrículas do aluno, descrita na HU-013.
+4. Uma matrícula realizada com sucesso deve ser refletida na consulta da matrícula atual do aluno, descrita na HU-013, e permitir a consulta dos detalhes das disciplinas matriculadas, descrita na HU-014.
 5. Após a conclusão da inscrição do aluno no semestre, o sistema de matrículas deve notificar o sistema de cobranças, conforme a HU-018.
 
 #### HU-010 — Cancelar matrícula
@@ -152,7 +155,7 @@ As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no p
 
 1. O aluno deve conseguir cancelar uma de suas matrículas enquanto o período de matrícula estiver aberto, conforme RN-004.
 2. O sistema deve impedir o cancelamento fora do período de matrícula.
-3. Após o cancelamento, a disciplina deve deixar de constar entre aquelas em que o aluno está matriculado no semestre.
+3. Após o cancelamento, a consulta da matrícula atual deve refletir a alteração, e a disciplina deve deixar de constar entre aquelas em que o aluno está matriculado no semestre, conforme HU-013 e HU-014.
 4. O aluno cuja matrícula foi cancelada deve deixar de ser contabilizado entre os matriculados naquela disciplina.
 
 #### HU-011 — Selecionar disciplinas obrigatórias
@@ -181,41 +184,42 @@ As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no p
 3. O sistema deve impedir a seleção de uma terceira disciplina alternativa ou optativa.
 4. A ausência de disciplinas optativas selecionadas deve permitir a continuidade do processo de matrícula.
 
-#### HU-013 — Consultar minhas matrículas
+#### HU-013 — Consultar minha matrícula atual
 
-**Como** aluno, **quero** consultar as disciplinas nas quais estou matriculado no semestre, **para** acompanhar minhas matrículas atuais.
+**Como** aluno, **quero** consultar minha matrícula atual, **para** acompanhar minha inscrição no semestre.
 
-**Requisito:** RF-013 · **Caso de uso:** Consultar suas matrículas · **Prioridade:** Média.
-
-**Critérios de aceitação:**
-
-1. A consulta deve apresentar as disciplinas em que o aluno autenticado está matriculado no semestre.
-2. As informações devem refletir as matrículas realizadas e os cancelamentos efetuados.
-3. Quando o aluno não possuir matrículas no semestre, a consulta deve indicar essa situação.
-
-#### HU-014 — Consultar dados das disciplinas
-
-**Como** aluno, **quero** visualizar informações detalhadas das disciplinas, **para** conhecer suas características e apoiar minhas escolhas de matrícula.
-
-**Requisito:** RF-014 · **Caso de uso:** Consultar dados da disciplina · **Prioridade:** Baixa.
+**Requisito:** RF-013 · **Caso de uso:** Consultar matrícula · **Prioridade:** Média.
 
 **Critérios de aceitação:**
 
-1. O aluno deve conseguir consultar os dados de uma disciplina.
-2. A consulta deve apresentar o número de créditos e o professor responsável pela disciplina.
-3. As informações exibidas devem corresponder aos dados cadastrados da disciplina consultada.
+1. A consulta deve apresentar a matrícula atual do aluno autenticado.
+2. As informações apresentadas devem corresponder à inscrição do aluno no semestre e refletir as matrículas realizadas e os cancelamentos efetuados.
+3. Quando o aluno não possuir matrícula atual, a consulta deve indicar essa situação.
 
-#### HU-015 — Consultar histórico de matrículas
+#### HU-014 — Consultar disciplinas matriculadas
 
-**Como** aluno, **quero** consultar as disciplinas em que estive matriculado em semestres anteriores, **para** acompanhar meu histórico de matrículas.
+**Como** aluno, **quero** visualizar informações detalhadas das disciplinas em que estou matriculado, **para** conhecer seus créditos e os professores responsáveis.
 
-**Requisito:** RF-015 · **Caso de uso:** Consultar histórico de matrículas · **Prioridade:** Baixa.
+**Requisito:** RF-014 · **Caso de uso:** Consultar disciplinas matriculadas · **Prioridade:** Baixa.
 
 **Critérios de aceitação:**
 
-1. O aluno deve conseguir consultar suas matrículas de semestres anteriores.
-2. A consulta deve permitir identificar as disciplinas e os respectivos semestres das matrículas.
-3. Quando o aluno não possuir matrículas anteriores, a consulta deve indicar essa situação.
+1. A consulta deve apresentar as disciplinas em que o aluno autenticado está matriculado.
+2. O aluno deve conseguir visualizar o número de créditos e o professor responsável por cada uma dessas disciplinas.
+3. As informações exibidas devem corresponder aos dados cadastrados das disciplinas e refletir as matrículas realizadas e os cancelamentos efetuados.
+4. Quando o aluno não possuir disciplinas matriculadas, a consulta deve indicar essa situação.
+
+#### HU-015 — Consultar histórico de disciplinas
+
+**Como** aluno, **quero** consultar as disciplinas que cursei em semestres anteriores, **para** acompanhar meu histórico de disciplinas cursadas.
+
+**Requisito:** RF-015 · **Caso de uso:** Consultar histórico de disciplinas · **Prioridade:** Baixa.
+
+**Critérios de aceitação:**
+
+1. O histórico deve apresentar as disciplinas cursadas pelo aluno autenticado em semestres anteriores.
+2. A consulta deve permitir identificar cada disciplina e o respectivo semestre em que foi cursada.
+3. Quando o aluno não possuir disciplinas cursadas em semestres anteriores, a consulta deve indicar essa situação.
 
 ### Professor
 
@@ -249,15 +253,13 @@ As histórias HU-002 a HU-018 pressupõem que o usuário esteja autenticado no p
 
 **Como** aluno, **quero** que minha inscrição no semestre seja comunicada automaticamente ao sistema de cobranças, **para** que eu possa ser cobrado pelas disciplinas em que me matriculei naquele semestre.
 
-**Requisito:** RF-018 · **Caso de uso proposto:** Solicitar geração de cobrança · **Prioridade:** Alta.
+**Requisito:** RF-018 · **Caso de uso:** Solicitar geração de cobrança · **Prioridade:** Alta.
 
-**Descrição do RF-018:** Após a conclusão da inscrição de um aluno no semestre, o sistema de matrículas deve notificar o sistema de cobranças para possibilitar a cobrança das disciplinas daquele semestre.
-
-Este requisito complementa os documentos de referência e ainda deve ser incorporado ao PDF de requisitos e ao diagrama de casos de uso.
+**Descrição do RF-018:** O aluno tem sua inscrição no semestre comunicada ao sistema de cobranças após sua conclusão, para possibilitar a cobrança das disciplinas daquele semestre.
 
 **Critérios de aceitação:**
 
-1. A conclusão da inscrição do aluno no semestre deve disparar automaticamente a notificação ao sistema de cobranças.
+1. A conclusão da inscrição do aluno no semestre deve disparar automaticamente a solicitação de geração de cobrança ao sistema externo, conforme a relação `<<include>>` de Realizar matrícula para Solicitar geração de cobrança no diagrama.
 2. A notificação deve permitir identificar o aluno, o semestre e as disciplinas em que ele efetivamente se matriculou.
 3. Uma inscrição que não tenha sido concluída não deve disparar a notificação de conclusão ao sistema de cobranças.
 4. O envio deve ocorrer como parte do fluxo de matrícula, sem exigir uma ação adicional do aluno para solicitar a notificação.
@@ -282,7 +284,7 @@ Os requisitos abaixo definem condições de qualidade, segurança e operação d
 | --- | --- | --- | --- |
 | RNF-001 | O tempo de resposta do sistema deve ser de até três segundos. | Alta | Todas as histórias. |
 | RNF-002 | O banco de dados deve receber um backup completo a cada 24 horas, preferencialmente em horário de menor utilização do sistema. | Alta | Dados que sustentam as histórias. |
-| RNF-003 | A sessão autenticada deve ser encerrada automaticamente após 30 minutos consecutivos sem interação do usuário. | Baixa | HU-001 e sessões utilizadas nas demais histórias. |
+| RNF-003 | A sessão autenticada deve ser encerrada automaticamente após 30 minutos consecutivos sem interação do usuário. | Baixa | HU-001 e sessões dos usuários. |
 | RNF-004 | O sistema deve manter disponibilidade mínima de 99% durante o período oficial de matrículas, desconsiderando manutenções previamente programadas. | Alta | Todas as histórias durante o período oficial de matrículas. |
 | RNF-005 | Registros de login, matrícula, cancelamento e outras operações relevantes devem permanecer armazenados por pelo menos 12 meses. | Média | HU-001, HU-009, HU-010 e demais operações relevantes. |
 | RNF-006 | A interface deve ser responsiva para dispositivos móveis com iOS e Android. | Alta | Interfaces de todas as histórias. |
