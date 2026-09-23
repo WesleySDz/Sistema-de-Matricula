@@ -3,11 +3,29 @@ package com.app.matricula_mais.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import lombok.Setter;
+
+@Entity
+@Setter
 public class Aluno extends Usuario {
 
     private String matricula;
     private String curso;
+
+    @OneToMany(mappedBy = "aluno")
     private List<Matricula> matriculas;
+
+    @ManyToMany
+    @JoinTable(
+        name = "aluno_historico_disciplina",
+        joinColumns = @JoinColumn(name = "aluno_id"),
+        inverseJoinColumns = @JoinColumn(name = "disciplina_id")
+    )
     private List<Disciplina> historicoDisciplinas;
 
     public Aluno() {

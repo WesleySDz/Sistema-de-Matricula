@@ -3,13 +3,33 @@ package com.app.matricula_mais.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Setter;
+
+@Entity
+@Table(name = "disciplina")
+@Setter
 public class Disciplina {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String codigo;
     private String nome;
     private int creditos;
+
+    @ManyToOne
+    @JoinColumn(name = "professor_responsavel_id")
     private Professor professorResponsavel;
+
+    @OneToMany(mappedBy = "disciplina")
     private List<Matricula> matriculas;
     private boolean ativa;
 

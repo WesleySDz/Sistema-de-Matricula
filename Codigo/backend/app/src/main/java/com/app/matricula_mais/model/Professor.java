@@ -3,9 +3,17 @@ package com.app.matricula_mais.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import lombok.Setter;
+
+@Entity
+@Setter
 public class Professor extends Usuario {
 
     private String titulacao;
+
+    @OneToMany(mappedBy = "professorResponsavel")
     private List<Disciplina> disciplinasResponsaveis;
 
     public Professor() {
