@@ -63,7 +63,7 @@ public class AutenticacaoService implements AuthenticationProvider {
         usuario.setTentativasInvalidas(0);
         usuario.registrarAcesso();
         return UsernamePasswordAuthenticationToken.authenticated(
-                new UsuarioAutenticado(usuario.getId(), usuario.getLogin(), perfil), null,
+                new UsuarioAutenticado(usuario.getId(), usuario.getLogin(), perfil, usuario.getNome(), usuario.getEmail()), null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + perfil)));
     }
 

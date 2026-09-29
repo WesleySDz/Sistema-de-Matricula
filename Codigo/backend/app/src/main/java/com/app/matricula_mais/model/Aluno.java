@@ -11,13 +11,15 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.AccessLevel;
 
 @Entity
 @Getter
 @Setter
 public class Aluno extends Usuario {
 
-    @Column(unique = true)
+    @Column(unique = true, updatable = false)
+    @Setter(AccessLevel.NONE)
     private String matricula;
     private String curso;
 
@@ -44,6 +46,13 @@ public class Aluno extends Usuario {
         this.curso = curso;
         this.matriculas = new ArrayList<>();
         this.historicoDisciplinas = new ArrayList<>();
+    }
+
+    public void atribuirMatricula(String matricula) {
+        if (this.matricula != null) {
+            throw new IllegalStateException("O número de matrícula do aluno não pode ser alterado.");
+        }
+        this.matricula = matricula;
     }
 
     public void realizarMatricula(Matricula novaMatricula) {

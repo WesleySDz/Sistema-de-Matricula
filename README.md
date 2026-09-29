@@ -2,7 +2,7 @@
 
 Sistema para apoiar a secretaria na gestão acadêmica, os alunos na realização e no acompanhamento de matrículas e os professores na consulta de suas disciplinas e dos alunos matriculados.
 
-As instruções de execução, autenticação, rotas e exemplos da API estão na [documentação do backend](Codigo/backend/app/README.md).
+As instruções para utilizar a interface de terminal com login único, os menus por perfil e as rotas da API estão na [documentação do projeto](Codigo/backend/app/README.md).
 
 ## Documentos de referência
 

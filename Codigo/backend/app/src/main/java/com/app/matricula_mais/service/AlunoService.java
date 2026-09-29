@@ -17,6 +17,7 @@ public class AlunoService {
     private final AlunoRepository alunos;
     private final MatriculaRepository matriculas;
     private final CadastroUsuarioService cadastroUsuarios;
+    private final GeradorMatriculaAlunoService geradorMatriculas;
 
     public List<AlunoResponse> listar() {
         return alunos.findAll().stream().map(AlunoResponse::de).toList();
@@ -46,12 +47,11 @@ public class AlunoService {
     }
 
     private AlunoResponse salvar(Aluno aluno, AlunoRequest dados) {
-        if (alunos.existsByMatriculaAndIdNot(dados.matricula(), aluno.getId() == null ? -1L : aluno.getId())) {
-            throw new RegraNegocioException("Número de matrícula já cadastrado.");
-        }
         cadastroUsuarios.preencher(aluno, dados.nome(), dados.login(), dados.senha(), dados.email());
-        aluno.setMatricula(dados.matricula());
         aluno.setCurso(dados.curso());
+        if (aluno.getId() == null) {
+            aluno.atribuirMatricula(geradorMatriculas.gerar());
+        }
         return AlunoResponse.de(alunos.save(aluno));
     }
 
