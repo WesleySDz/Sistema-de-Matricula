@@ -3,9 +3,11 @@ package com.app.matricula_mais.model;
 import java.util.List;
 
 import jakarta.persistence.Entity;
+import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Getter
 @Setter
 public class FuncionarioSecretaria extends Usuario {
 

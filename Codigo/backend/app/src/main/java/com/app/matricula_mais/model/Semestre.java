@@ -11,10 +11,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Table(name = "semestre")
+@Getter
 @Setter
 public class Semestre {
 
@@ -71,35 +73,4 @@ public class Semestre {
         return true;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public boolean isPeriodoMatriculaAberto() {
-        return periodoMatriculaAberto;
-    }
-
-    public void setPeriodoMatriculaAberto(boolean periodoMatriculaAberto) {
-        this.periodoMatriculaAberto = periodoMatriculaAberto;
-    }
-
-    public List<Disciplina> getDisciplinasOfertadas() {
-        return disciplinasOfertadas;
-    }
-
-    public void setDisciplinasOfertadas(List<Disciplina> disciplinasOfertadas) {
-        this.disciplinasOfertadas = disciplinasOfertadas;
-    }
 }

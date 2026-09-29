@@ -5,9 +5,11 @@ import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Getter
 @Setter
 public class Professor extends Usuario {
 
@@ -49,19 +51,4 @@ public class Professor extends Usuario {
         return disciplina != null && disciplinasResponsaveis.contains(disciplina);
     }
 
-    public String getTitulacao() {
-        return titulacao;
-    }
-
-    public void setTitulacao(String titulacao) {
-        this.titulacao = titulacao;
-    }
-
-    public List<Disciplina> getDisciplinasResponsaveis() {
-        return disciplinasResponsaveis;
-    }
-
-    public void setDisciplinasResponsaveis(List<Disciplina> disciplinasResponsaveis) {
-        this.disciplinasResponsaveis = disciplinasResponsaveis;
-    }
 }

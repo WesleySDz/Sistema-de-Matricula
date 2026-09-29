@@ -8,9 +8,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
+import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Getter
 @Setter
 public class Aluno extends Usuario {
 
@@ -73,35 +75,4 @@ public class Aluno extends Usuario {
         return historicoDisciplinas;
     }
 
-    public String getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(String matricula) {
-        this.matricula = matricula;
-    }
-
-    public String getCurso() {
-        return curso;
-    }
-
-    public void setCurso(String curso) {
-        this.curso = curso;
-    }
-
-    public List<Matricula> getMatriculas() {
-        return matriculas;
-    }
-
-    public void setMatriculas(List<Matricula> matriculas) {
-        this.matriculas = matriculas;
-    }
-
-    public List<Disciplina> getHistoricoDisciplinas() {
-        return historicoDisciplinas;
-    }
-
-    public void setHistoricoDisciplinas(List<Disciplina> historicoDisciplinas) {
-        this.historicoDisciplinas = historicoDisciplinas;
-    }
 }
