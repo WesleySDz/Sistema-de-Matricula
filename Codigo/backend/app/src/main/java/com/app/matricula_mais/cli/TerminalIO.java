@@ -41,9 +41,9 @@ public class TerminalIO {
     }
 
     public void titulo(String texto) {
-        linha("\n=====================================");
+        linha("\n========================================================");
         linha(texto);
-        linha("=====================================");
+        linha("========================================================\n");
     }
 
     public String texto(String pergunta) {
@@ -82,9 +82,12 @@ public class TerminalIO {
     }
 
     public int opcao() {
+        linha("");
         while (true) {
             try {
-                return Integer.parseInt(texto("Escolha uma opção: "));
+                int opcao = Integer.parseInt(texto("Escolha uma opção: "));
+                linha("");
+                return opcao;
             } catch (NumberFormatException ex) {
                 linha("Digite o número de uma opção.");
             }

@@ -9,6 +9,7 @@ import com.app.matricula_mais.dto.Requisicoes.CursoRequest;
 import com.app.matricula_mais.dto.Requisicoes.DisciplinaRequest;
 import com.app.matricula_mais.dto.Requisicoes.MatriculaRequest;
 import com.app.matricula_mais.dto.Requisicoes.ProfessorRequest;
+import com.app.matricula_mais.dto.Requisicoes.PerfilRequest;
 import com.app.matricula_mais.dto.Requisicoes.SemestreRequest;
 import com.app.matricula_mais.dto.Respostas.AlunoResponse;
 import com.app.matricula_mais.dto.Respostas.CursoResponse;
@@ -101,19 +102,58 @@ public class TerminalApplication {
             int opcao = io.opcao();
             if (opcao == 0)
                 return;
+            if (opcao == 9) {
+                acao(this::menuMeuPerfil);
+                usuario = api.buscar("/api/auth/me", UsuarioAutenticado.class);
+                continue;
+            }
+            String perfil = usuario.perfil();
             acao(() -> {
-                if (opcao == 9) {
-                    tela.perfil(api.buscar("/api/auth/me", UsuarioAutenticado.class));
-                } else {
-                    switch (usuario.perfil()) {
-                        case "SECRETARIA" -> secretaria(opcao);
-                        case "ALUNO" -> aluno(opcao);
-                        case "PROFESSOR" -> professor(opcao);
-                        default -> opcaoInvalida();
-                    }
+                switch (perfil) {
+                    case "SECRETARIA" -> secretaria(opcao);
+                    case "ALUNO" -> aluno(opcao);
+                    case "PROFESSOR" -> professor(opcao);
+                    default -> opcaoInvalida();
                 }
             });
         }
+    }
+
+    private void menuMeuPerfil() {
+        while (true) {
+            var usuario = api.buscar("/api/auth/me", UsuarioAutenticado.class);
+            tela.perfil(usuario);
+            io.linha("\n  1 - Alterar meus dados\n  0 - Voltar");
+            int opcao = io.opcao();
+            if (opcao == 0)
+                return;
+            acao(() -> {
+                if (opcao != 1) {
+                    opcaoInvalida();
+                    return;
+                }
+                io.titulo("ALTERAR MEUS DADOS");
+                io.linha("Pressione Enter para manter o valor atual ou /voltar para cancelar.");
+                String nome = editarTexto("Nome", usuario.nome());
+                String login = editarTexto("Login", usuario.login());
+                String email = editarTexto("E-mail", usuario.email());
+                String senha = io.senha("Nova senha (Enter para manter): ");
+                if (!senha.isEmpty() && !senha.equals(io.senha("Confirme a nova senha: "))) {
+                    io.linha("As senhas não conferem. Nenhuma alteração foi salva.");
+                    return;
+                }
+                var dados = new PerfilRequest(nome, login, email, senha.isEmpty() ? null : senha);
+                if (io.confirmar("Salvar alterações do meu perfil?")) {
+                    api.salvar("PUT", "/api/auth/me", dados, UsuarioAutenticado.class);
+                    io.linha("Perfil atualizado com sucesso.");
+                }
+            });
+        }
+    }
+
+    private String editarTexto(String campo, String atual) {
+        String novo = io.texto(campo + " [" + (atual == null ? "Não informado" : atual) + "]: ");
+        return novo.isEmpty() ? atual : novo;
     }
 
     private void secretaria(int opcao) {
@@ -194,7 +234,7 @@ public class TerminalApplication {
             Consumer<T> apresentar) {
         while (true) {
             io.titulo(titulo);
-            io.linha("1 - Listar\n2 - Consultar por ID\n3 - Cadastrar\n4 - Atualizar\n5 - Excluir\n0 - Voltar");
+            io.linha("  1 - Listar\n  2 - Consultar por ID\n  3 - Cadastrar\n  4 - Atualizar\n  5 - Excluir\n\n  0 - Voltar");
             int opcao = io.opcao();
             if (opcao == 0)
                 return;

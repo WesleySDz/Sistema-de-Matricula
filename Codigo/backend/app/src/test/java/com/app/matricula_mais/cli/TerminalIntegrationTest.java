@@ -62,8 +62,8 @@ class TerminalIntegrationTest {
 
     @Test
     void umLoginTrocaOsTresMenusEEncerraAsSessoes() {
-        String saida = terminal("secretaria-terminal", "senha-secretaria", "9", "0",
-            aluno.login(), "senha-aluno", "9", "0", professor.login(), "senha-professor", "9", "0", "0");
+        String saida = terminal("secretaria-terminal", "senha-secretaria", "9", "0", "0",
+            aluno.login(), "senha-aluno", "9", "0", "0", professor.login(), "senha-professor", "9", "0", "0", "0");
         assertThat(saida).contains("Olá, Secretaria", "Perfil: SECRETARIA", "Gerenciar alunos",
             "Olá, " + aluno.nome(), "Perfil: ALUNO", "Realizar matrícula",
             "Olá, " + professor.nome(), "Perfil: PROFESSOR", "Consultar minhas disciplinas", "Sistema encerrado.");
@@ -79,7 +79,7 @@ class TerminalIntegrationTest {
         String login = "novo-" + sufixo;
         String saida = terminal("secretaria-terminal", "senha-secretaria", "1", "3",
             "Novo Aluno", login, "senha-nova", "novo@teste.com", curso.id().toString(), "s", "0", "0",
-            login, "senha-nova", "9", "0", "0");
+            login, "senha-nova", "9", "0", "0", "0");
         assertThat(saida).contains("Cadastro realizado.", "Olá, Novo Aluno", "Perfil: ALUNO", "E-mail: novo@teste.com");
         assertThat(saida).doesNotContain("Número de matrícula:").containsPattern("Matrícula: [0-9]{7,}");
         assertThat(saida).contains("SELEÇÃO DE CURSO", "[" + curso.id() + "] " + curso.nome(), "Curso: " + curso.nome());
@@ -200,6 +200,35 @@ class TerminalIntegrationTest {
         assertThat(saida).contains("Cursos disponíveis:", "Operação cancelada.").doesNotContain("Cadastro realizado.");
         api.login("secretaria-terminal", "senha-secretaria");
         assertThat(api.listar("/api/alunos", AlunoResponse.class)).noneMatch(a -> a.login().equals(login));
+    }
+
+    @Test
+    void alunoEditaPerfilEMantemMatriculaECurso() {
+        String novoLogin = "editado-" + sufixo;
+        String saida = terminal(aluno.login(), "senha-aluno", "9", "1", "Ana Editada", novoLogin,
+            "editada@teste.com", "senha-editada", "senha-editada", "s", "0", "0",
+            novoLogin, "senha-editada", "9", "0", "0", "0");
+        assertThat(saida).contains("Perfil atualizado com sucesso.", "Olá, Ana Editada", "E-mail: editada@teste.com")
+            .doesNotContain("Login ou senha inválidos.", "senha-editada");
+        api.login("secretaria-terminal", "senha-secretaria");
+        AlunoResponse atualizado = api.buscar("/api/alunos/" + aluno.id(), AlunoResponse.class);
+        assertThat(atualizado.matricula()).isEqualTo(aluno.matricula());
+        assertThat(atualizado.cursoId()).isEqualTo(curso.id());
+        assertThat(atualizado.login()).isEqualTo(novoLogin);
+    }
+
+    @Test
+    void perfilMantemCamposComEnterECancelamentoNaoSalvaAlteracoes() {
+        String saida = terminal(aluno.login(), "senha-aluno", "9",
+            "1", "", "", "", "", "s",
+            "1", "Nome cancelado", "", "", "", "n",
+            "1", "/voltar",
+            "1", "Nome inválido", "", "", "senha-nova", "senha-diferente",
+            "0", "0", "0");
+        assertThat(saida).contains("Perfil atualizado com sucesso.", "Operação cancelada.", "As senhas não conferem.");
+        var atual = api.login(aluno.login(), "senha-aluno");
+        assertThat(atual.nome()).isEqualTo(aluno.nome());
+        assertThat(atual.email()).isEqualTo(aluno.email());
     }
 
     private ApiClient cliente() {

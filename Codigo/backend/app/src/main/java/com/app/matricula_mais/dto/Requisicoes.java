@@ -10,6 +10,14 @@ import jakarta.validation.constraints.Size;
 public final class Requisicoes {
     private Requisicoes() { }
 
+    public record PerfilRequest(@NotBlank String nome, @NotBlank String login,
+            @Email @Size(min = 1) String email, @Size(min = 8, max = 72) String senha) {
+        @Override
+        public String toString() {
+            return "PerfilRequest[credenciais protegidas]";
+        }
+    }
+
     public record AlunoRequest(@NotBlank String nome, @NotBlank String login,
             @NotBlank @Size(min = 8, max = 72) String senha, @NotBlank @Email String email,
             @NotNull @Positive Long cursoId) {

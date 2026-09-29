@@ -48,9 +48,11 @@ O campo de autenticação é **Login**, já existente no projeto. O e-mail perma
 | Secretaria | Cadastrar, listar, consultar, atualizar e excluir alunos, professores, disciplinas e cursos; cadastrar semestres; definir currículos; consultar matrículas e situação das ofertas; encerrar matrículas e concluir o semestre letivo. |
 | Aluno | Consultar ofertas, realizar matrícula, consultar matrículas e detalhes das disciplinas, cancelar matrícula própria e consultar histórico. |
 | Professor | Consultar suas disciplinas, os respectivos alunos e os currículos dos semestres. |
-| Todos | Consultar o próprio perfil e sair da conta para permitir novo login. |
+| Todos | Consultar e editar o próprio perfil; sair da conta para permitir novo login. |
 
 A opção `0` volta ao menu anterior ou sai da conta, conforme indicado na tela. Na tela de login, `0` encerra o programa. Use `/voltar` durante o preenchimento de um formulário para cancelar a operação. IDs são exibidos nas consultas; listas de disciplinas são informadas como `1,2,3`, e Enter representa uma lista vazia. Operações de alteração pedem confirmação.
+
+Em **9 - Meu perfil → 1 - Alterar meus dados**, cada usuário pode editar nome, login, e-mail e senha. Enter mantém o valor atual; uma nova senha exige confirmação e deve ter pelo menos oito caracteres. As alterações só são salvas após confirmação. O nome atualizado aparece ao retornar ao menu, e o próximo login utiliza as novas credenciais. ID, matrícula, curso, perfil de acesso e titulação não são editáveis nessa tela.
 
 No cadastro e na atualização de alunos, a etapa **SELEÇÃO DE CURSO** consulta os cursos cadastrados e exibe `[ID] Nome`. Informe o ID de um desses cursos. Um ID inexistente apresenta `Curso inválido. Escolha um dos cursos disponíveis.` e repete a lista até uma escolha válida ou `/voltar`. Se não houver cursos, o formulário é cancelado com orientação para cadastrar um curso pelo menu de cursos primeiro.
 
@@ -90,7 +92,7 @@ Tanto a API quanto o terminal usam o H2 em arquivo (`data/matricula-mais.mv.db`)
 1. Faça `GET /api/auth/csrf`, preservando o cookie de sessão. A resposta contém `token`, `headerName` e `parameterName`.
 2. Faça `POST /api/auth/login` com `Content-Type: application/x-www-form-urlencoded`, campos `login` e `senha`, e o token CSRF no cabeçalho indicado. Sucesso retorna `204`; credenciais inválidas, `401`; conta bloqueada, `423`.
 3. Consulte novamente `/api/auth/csrf` após o login, pois o token é renovado. Preserve o cookie e envie o token nas operações POST, PUT e DELETE.
-4. `GET /api/auth/me` retorna identificador, login, nome, e-mail e perfil da sessão. `POST /api/auth/logout` encerra a sessão e retorna `204`.
+4. `GET /api/auth/me` consulta os dados atuais da conta identificada pela sessão e retorna identificador, login, nome, e-mail e perfil. `PUT /api/auth/me` atualiza os dados pessoais dessa mesma conta. `POST /api/auth/logout` encerra a sessão e retorna `204`.
 
 A sessão expira após 30 minutos sem interação. Cinco falhas consecutivas bloqueiam a conta por 15 minutos; o contador é persistido mesmo quando a autenticação falha. Uma autenticação bem-sucedida zera o contador.
 
@@ -100,6 +102,7 @@ Todas as rotas abaixo exigem autenticação. IDs são numéricos.
 
 | Perfil | Método e rota | Operação |
 | --- | --- | --- |
+| Todos | `GET/PUT /api/auth/me` | Consultar/editar os próprios dados pessoais |
 | Secretaria | `GET/POST /api/alunos` | Listar/cadastrar alunos |
 | Secretaria | `GET/PUT/DELETE /api/alunos/{id}` | Consultar/atualizar/excluir aluno |
 | Secretaria | `GET/POST /api/professores` | Listar/cadastrar professores |
@@ -128,6 +131,21 @@ Nos endpoints `/me` e de matrícula, a identidade vem da sessão; o cliente não
 ## Corpos de requisição
 
 POST e PUT de cadastros recebem os mesmos campos. PUT substitui todos os campos editáveis, inclusive a senha nos cadastros de usuários.
+
+A edição do próprio perfil usa `PUT /api/auth/me`, com sessão e CSRF:
+
+```json
+{
+  "nome": "Ana Silva",
+  "login": "ana",
+  "email": "ana@example.com",
+  "senha": null
+}
+```
+
+Nessa rota, nome e login são obrigatórios; senha ausente ou `null` mantém a senha atual. E-mail ausente ou `null` preserva o valor cadastrado, inclusive na secretaria inicial sem e-mail; quando enviado, deve ser válido e não vazio. Login duplicado e senha inválida são recusados sem salvar alterações parciais. O backend usa exclusivamente o ID da sessão e atualiza somente esses dados pessoais: campos extras não alteram identidade, permissões ou vínculos acadêmicos.
+
+Cadastro ou atualização de aluno pela secretaria:
 
 ```json
 {

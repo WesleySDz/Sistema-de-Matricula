@@ -22,7 +22,11 @@ public class ApresentacaoTerminal {
     public <T> void lista(List<T> registros, Consumer<T> apresentar) {
         if (registros.isEmpty())
             io.linha("Nenhum registro encontrado.");
-        registros.forEach(apresentar);
+        for (int i = 0; i < registros.size(); i++) {
+            if (i > 0)
+                io.linha("");
+            apresentar.accept(registros.get(i));
+        }
     }
 
     public void aluno(AlunoResponse aluno) {
@@ -42,9 +46,23 @@ public class ApresentacaoTerminal {
     }
 
     public void curso(CursoResponse curso) {
-        io.linha("ID: " + curso.id() + " | Curso: " + curso.nome() + " | Créditos: " + curso.quantidadeCreditos());
-        io.linha("Disciplinas do curso:");
-        lista(curso.disciplinas(), this::disciplina);
+        io.linha("--------------------------------------------------------");
+        io.linha("  Curso: " + curso.nome());
+        io.linha("  ID: " + curso.id());
+        io.linha("  Créditos: " + curso.quantidadeCreditos());
+        io.linha("");
+        io.linha("  Disciplinas do curso:");
+        if (curso.disciplinas().isEmpty()) {
+            io.linha("    Nenhuma disciplina vinculada.");
+        } else {
+            lista(curso.disciplinas(), disciplina -> {
+                io.linha("    [" + disciplina.id() + "] " + disciplina.codigo() + " - " + disciplina.nome());
+                io.linha("        Créditos: " + disciplina.creditos());
+                io.linha("        Professor: " + valor(disciplina.professorNome())
+                        + " (ID " + valor(disciplina.professorId()) + ")");
+            });
+        }
+        io.linha("--------------------------------------------------------");
     }
 
     public void resumoSemestre(SemestreResponse semestre) {
