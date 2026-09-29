@@ -1,0 +1,19 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "dbcode.connections": [
+        {
+            "connectionId": "matricula-mais-h2-projeto",
+            "name": "Matrícula H2 - dados do projeto",
+            "driver": "h2",
+            "connectionType": "embedded",
+            "socket": "C:/Users/Wesley/Documents/Sistema-de-Matricula/Codigo/backend/app/data/matricula-mais",
+            "username": "sa",
+            "password": "",
+            "savePassword": "yes",
+            "driverOptions": {
+                "ifExists": true
+            },
+            "readOnly": false
+        }
+    ]
+}

@@ -62,6 +62,57 @@ Em um terminal interativo, a senha não é exibida. Consoles de IDE ou entrada r
 
 O perfil `terminal` usa **H2 em arquivo** (`data/matricula-mais.mv.db`) e conserva os cadastros entre execuções. Os logs técnicos ficam em `data/matricula-mais.log`, fora dos menus. Esses arquivos são ignorados pelo Git. Não execute duas instâncias usando o mesmo arquivo de banco.
 
+Os iniciadores `terminal.cmd` e `terminal.sh` sempre usam a pasta `Codigo/backend/app` como diretório de trabalho. Ao executar pela IDE ou iniciar o JAR manualmente, use esse mesmo diretório ou configure `MATRICULA_DATA_DIR` com o caminho absoluto da pasta de dados. Assim todas as formas de execução consultam o mesmo banco. Exemplo no PowerShell, a partir da pasta do backend:
+
+```powershell
+$env:MATRICULA_DATA_DIR = Join-Path (Get-Location) "data"
+.\terminal.cmd
+```
+
+Na configuração de execução da IDE, informe o mesmo valor absoluto nessa variável. Ela também define a pasta dos logs do terminal. Sem a variável, o padrão continua sendo `./data`, preservando o banco já existente. Apontar para outra pasta abre outro banco, sem transferir os registros do anterior. O banco fica fora de `target`, portanto recompilar ou executar `mvnw clean` não apaga os cadastros.
+
+Cadastros, edições, exclusões e matrículas são executados pelos services transacionais e pelos repositories JPA. Consultas leem o banco. Cancelar uma matrícula persiste `ativa=false`, preservando o histórico; exclusões de cadastros sem impedimentos removem o registro. Alterações em entidades gerenciadas, como currículo e encerramento de semestre, são gravadas pelo JPA no commit da transação. As listas nas entidades representam relacionamentos mapeados em tabelas, e não uma fonte de dados temporária. Operações recusadas são revertidas integralmente.
+
+### Visualizar as tabelas do H2
+
+O arquivo `matricula-mais.mv.db` é um banco H2. Abri-lo como um arquivo SQLite em uma extensão que reconhece `.db` não permite consultar seu conteúdo. Uma mensagem `No tables found` ou `Failed to fetch` nesse visualizador não demonstra que os cadastros foram perdidos.
+
+1. Encerre a aplicação pelo menu antes de abrir o banco em outro programa; o modo H2 embarcado mantém o arquivo bloqueado enquanto está em uso.
+2. Em um cliente com suporte a JDBC/H2, como o [DBeaver](https://dbeaver.com/docs/dbeaver/Create-Connection/), crie uma conexão **H2 Embedded**, usando o driver `org.h2.Driver`, versão **2.4.240** (versão usada pelo projeto).
+3. Use a URL abaixo, substituindo `<caminho-absoluto>` pela pasta `data` real. O nome na URL não leva a extensão `.mv.db`; `IFEXISTS=TRUE` impede criar outro banco por engano.
+
+```text
+JDBC URL: jdbc:h2:file:<caminho-absoluto>/matricula-mais;IFEXISTS=TRUE
+Usuário: sa
+Senha: (vazia, na configuração padrão)
+Schema: PUBLIC
+```
+
+Consulte a [documentação do H2](https://h2database.github.io/html/features.html) para os detalhes da conexão em arquivo. Desconecte o cliente antes de iniciar a aplicação novamente. As conexões MySQL/PostgreSQL existentes no editor são bancos separados e não recebem as operações desta configuração H2.
+
+Exemplos de consultas, sem expor hashes de senha:
+
+```sql
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'BASE TABLE'
+ORDER BY TABLE_NAME;
+
+SELECT a.id, a.nome, a.matricula, c.id AS curso_id, c.nome AS curso
+FROM usuario a
+LEFT JOIN curso c ON c.id = a.curso_id
+WHERE a.dtype = 'Aluno';
+
+SELECT m.id, a.nome AS aluno, d.nome AS disciplina, m.semestre, m.ativa, m.optativa
+FROM matricula m
+JOIN usuario a ON a.id = m.aluno_id
+JOIN disciplina d ON d.id = m.disciplina_id;
+```
+
+Alunos, professores e funcionários são armazenados na tabela `usuario`, com o tipo na coluna `dtype`, conforme a herança JPA existente. Cursos, disciplinas e matrículas têm suas próprias tabelas, e as associações de curso/semestre com disciplinas são persistidas em tabelas de relacionamento.
+
+### Caminho das operações
+
 ```text
 CLI (menus e formulários)
     -> ApiClient (HTTP local, cookie de sessão e CSRF)
@@ -85,7 +136,7 @@ Na pasta `Codigo/backend/app`, configure `SECRETARIA_LOGIN` e `SECRETARIA_SENHA`
 
 Essas variáveis criam a primeira conta de secretaria caso o login ainda não exista. Não há credenciais padrão nem cadastro público. Alunos e professores são cadastrados pela secretaria. Senhas são armazenadas com BCrypt; nunca são retornadas pela API.
 
-Tanto a API quanto o terminal usam o H2 em arquivo (`data/matricula-mais.mv.db`) e preservam os cadastros e a sequência de matrículas entre execuções. Para implantação web, configure o banco e as migrações adequados ao ambiente. Apenas os testes usam bancos em memória, sem acessar os dados locais.
+Tanto a API quanto o terminal usam o H2 em arquivo (`data/matricula-mais.mv.db`) e preservam os cadastros e a sequência de matrículas entre execuções. Para implantação web, configure o banco e as migrações adequados ao ambiente. Os testes usam bancos isolados em memória ou em diretório temporário, sem acessar os dados locais.
 
 ## Autenticação e CSRF
 
@@ -227,5 +278,7 @@ Os testes cobrem os limites por semestre, duplicidades, período de matrícula, 
 Os testes de integração da interface executam entradas de terminal contra um servidor HTTP real, verificando o login único dos três perfis, troca de usuário, cadastro, inscrição, cancelamento, consultas do professor, histórico, mensagens de validação e acesso negado mesmo fora dos menus. Há também verificação de entrada inválida, cancelamento de formulário e fim de entrada. Nesses testes de integração, a autenticação passa pelos filtros reais de segurança.
 
 A seleção de curso tem cobertura de ID válido, repetição após IDs inexistentes, entrada textual recusada, cancelamento e ausência de cursos. Os testes da API verificam o vínculo persistido, troca e renomeação do curso, rejeição de IDs inválidos sem cadastros parciais e preservação da chave estrangeira ao tentar excluir um curso em uso.
+
+`PersistenciaReinicioIntegrationTest` carrega a configuração de produção com uma pasta de dados temporária e inicia/fecha três contextos completos da aplicação, incluindo servidor HTTP, JPA e pool de conexões. As operações passam pela autenticação e pelos controllers reais. Após cada fechamento, consultas JDBC independentes verificam o conteúdo no arquivo H2. O teste cobre cadastros, edições, exclusões, atualização de perfil e credenciais, sequência de matrículas, relacionamentos, currículo, cancelamento, encerramento e histórico após reiniciar. Os dados de teste ficam separados do banco utilizado pelo usuário.
 
 Os requisitos operacionais de backups, disponibilidade, retenção de auditoria por 12 meses e tempo de resposta sob carga precisam de infraestrutura e validação específicas. Responsividade é uma responsabilidade do frontend. Não são garantidos apenas por estas camadas do backend.
