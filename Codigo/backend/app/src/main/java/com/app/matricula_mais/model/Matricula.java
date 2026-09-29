@@ -31,6 +31,7 @@ public class Matricula {
     private Disciplina disciplina;
     private LocalDate dataMatricula;
     private boolean ativa;
+    private boolean optativa;
     private String semestre;
 
     public Matricula() {

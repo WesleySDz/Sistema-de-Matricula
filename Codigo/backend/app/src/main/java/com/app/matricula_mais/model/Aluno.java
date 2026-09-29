@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -16,6 +17,7 @@ import lombok.Setter;
 @Setter
 public class Aluno extends Usuario {
 
+    @Column(unique = true)
     private String matricula;
     private String curso;
 

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,8 +24,17 @@ public class Semestre {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(unique = true)
     private String nome;
     private boolean periodoMatriculaAberto;
+    private boolean concluido;
+
+    // O cancelamento pertence à oferta do semestre, não ao cadastro da disciplina.
+    @ManyToMany
+    @JoinTable(name = "semestre_disciplina_cancelada",
+        joinColumns = @JoinColumn(name = "semestre_id"),
+        inverseJoinColumns = @JoinColumn(name = "disciplina_id"))
+    private List<Disciplina> disciplinasCanceladas = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(

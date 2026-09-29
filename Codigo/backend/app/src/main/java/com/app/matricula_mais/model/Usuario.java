@@ -3,6 +3,7 @@ package com.app.matricula_mais.model;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,10 +21,13 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nome;
+    @Column(unique = true)
     private String login;
     private String senha;
     private String email;
     private LocalDateTime ultimoAcesso;
+    private int tentativasInvalidas;
+    private LocalDateTime bloqueadoAte;
 
     public Usuario() {
     }
