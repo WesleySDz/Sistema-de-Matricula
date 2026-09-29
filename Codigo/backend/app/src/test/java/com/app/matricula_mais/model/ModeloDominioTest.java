@@ -9,7 +9,8 @@ class ModeloDominioTest {
 
     @Test
     void deveCriarModeloBasicoDeDominio() {
-        Aluno aluno = new Aluno(1L, "Ana", "ana", "123", "ana@email.com", "2024-001", "ADS");
+        Curso curso = new Curso(1L, "ADS", 120);
+        Aluno aluno = new Aluno(1L, "Ana", "ana", "123", "ana@email.com", "2024-001", curso);
         Professor professor = new Professor(2L, "Bruno", "bruno", "456", "bruno@email.com", "Mestre");
         Disciplina disciplina = new Disciplina(10L, "MAT101", "Matemática", 4);
         professor.associarDisciplina(disciplina);
@@ -19,6 +20,7 @@ class ModeloDominioTest {
         disciplina.adicionarMatricula(matricula);
 
         assertEquals("Ana", aluno.getNome());
+        assertEquals(curso, aluno.getCurso());
         assertEquals("MAT101", disciplina.getCodigo());
         assertTrue(matricula.isAtiva());
         assertEquals(professor, disciplina.getProfessorResponsavel());

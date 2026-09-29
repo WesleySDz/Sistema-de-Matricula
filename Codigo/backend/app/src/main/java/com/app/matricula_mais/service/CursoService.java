@@ -48,7 +48,7 @@ public class CursoService {
         return CursoResponse.de(cursos.save(curso));
     }
 
-    private Curso buscarEntidade(Long id) {
+    public Curso buscarEntidade(Long id) {
         return cursos.findById(id).orElseThrow(() -> new RecursoNaoEncontradoException("Curso"));
     }
 }

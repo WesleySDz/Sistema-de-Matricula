@@ -18,6 +18,7 @@ public class AlunoService {
     private final MatriculaRepository matriculas;
     private final CadastroUsuarioService cadastroUsuarios;
     private final GeradorMatriculaAlunoService geradorMatriculas;
+    private final CursoService cursos;
 
     public List<AlunoResponse> listar() {
         return alunos.findAll().stream().map(AlunoResponse::de).toList();
@@ -47,8 +48,9 @@ public class AlunoService {
     }
 
     private AlunoResponse salvar(Aluno aluno, AlunoRequest dados) {
+        var curso = cursos.buscarEntidade(dados.cursoId());
         cadastroUsuarios.preencher(aluno, dados.nome(), dados.login(), dados.senha(), dados.email());
-        aluno.setCurso(dados.curso());
+        aluno.setCurso(curso);
         if (aluno.getId() == null) {
             aluno.atribuirMatricula(geradorMatriculas.gerar());
         }

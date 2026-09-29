@@ -12,16 +12,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.matricula_mais.dto.Requisicoes.*;
 import com.app.matricula_mais.dto.Requisicoes.CurriculoRequest;
 import com.app.matricula_mais.dto.Requisicoes.MatriculaRequest;
 import com.app.matricula_mais.exception.RegraNegocioException;
 import com.app.matricula_mais.model.Aluno;
+import com.app.matricula_mais.model.Curso;
 import com.app.matricula_mais.model.Disciplina;
 import com.app.matricula_mais.model.Matricula;
 import com.app.matricula_mais.model.Professor;
 import com.app.matricula_mais.model.Semestre;
 import com.app.matricula_mais.repository.AlunoRepository;
+import com.app.matricula_mais.repository.CursoRepository;
 import com.app.matricula_mais.repository.DisciplinaRepository;
 import com.app.matricula_mais.repository.MatriculaRepository;
 import com.app.matricula_mais.repository.NotificacaoCobrancaRepository;
@@ -31,6 +32,7 @@ import com.app.matricula_mais.repository.SemestreRepository;
 @SpringBootTest
 @Transactional
 class MatriculaServiceIntegrationTest {
+
     @Autowired
     MatriculaService service;
     @Autowired
@@ -39,6 +41,8 @@ class MatriculaServiceIntegrationTest {
     ProfessorService professorService;
     @Autowired
     AlunoRepository alunos;
+    @Autowired
+    CursoRepository cursos;
     @Autowired
     ProfessorRepository professores;
     @Autowired
@@ -190,7 +194,8 @@ class MatriculaServiceIntegrationTest {
 
     private Aluno novoAluno(String sufixo) {
         return alunos
-                .save(new Aluno(null, "Aluno", "aluno-" + sufixo, "hash", "aluno@teste.com", "MAT-" + sufixo, "ADS"));
+                .save(new Aluno(null, "Aluno", "aluno-" + sufixo, "hash", "aluno@teste.com", "MAT-" + sufixo,
+                        cursos.save(new Curso(null, "ADS", 120))));
     }
 
     private List<Long> ids(int inicio, int fim) {

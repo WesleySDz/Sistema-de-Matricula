@@ -12,7 +12,7 @@ public final class Requisicoes {
 
     public record AlunoRequest(@NotBlank String nome, @NotBlank String login,
             @NotBlank @Size(min = 8, max = 72) String senha, @NotBlank @Email String email,
-            @NotBlank String curso) {
+            @NotNull @Positive Long cursoId) {
         @Override
         public String toString() {
             return "AlunoRequest[credenciais protegidas]";

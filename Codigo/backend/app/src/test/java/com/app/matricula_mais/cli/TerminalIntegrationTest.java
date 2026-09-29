@@ -31,6 +31,7 @@ class TerminalIntegrationTest {
     @Autowired ObjectMapper json;
     private ApiClient api;
     private AlunoResponse aluno;
+    private CursoResponse curso;
     private ProfessorResponse professor;
     private DisciplinaResponse disciplina;
     private SemestreResponse semestre;
@@ -41,8 +42,9 @@ class TerminalIntegrationTest {
         api = cliente();
         api.login("secretaria-terminal", "senha-secretaria");
         sufixo = UUID.randomUUID().toString();
+        curso = api.salvar("POST", "/api/cursos", new CursoRequest("ADS " + sufixo, 120, List.of()), CursoResponse.class);
         aluno = api.salvar("POST", "/api/alunos", new AlunoRequest("Ana " + sufixo, "ana-" + sufixo,
-            "senha-aluno", "ana@teste.com", "ADS"), AlunoResponse.class);
+            "senha-aluno", "ana@teste.com", curso.id()), AlunoResponse.class);
         professor = api.salvar("POST", "/api/professores", new ProfessorRequest("Docente " + sufixo,
             "docente-" + sufixo, "senha-professor", "docente@teste.com", "Mestre"), ProfessorResponse.class);
         disciplina = api.salvar("POST", "/api/disciplinas", new DisciplinaRequest("DISC-" + sufixo,
@@ -76,10 +78,11 @@ class TerminalIntegrationTest {
     void secretariaCadastraAlunoPeloTerminalEOAlunoEntraNoMesmoLogin() {
         String login = "novo-" + sufixo;
         String saida = terminal("secretaria-terminal", "senha-secretaria", "1", "3",
-            "Novo Aluno", login, "senha-nova", "novo@teste.com", "ADS", "s", "0", "0",
+            "Novo Aluno", login, "senha-nova", "novo@teste.com", curso.id().toString(), "s", "0", "0",
             login, "senha-nova", "9", "0", "0");
         assertThat(saida).contains("Cadastro realizado.", "Olá, Novo Aluno", "Perfil: ALUNO", "E-mail: novo@teste.com");
         assertThat(saida).doesNotContain("Número de matrícula:").containsPattern("Matrícula: [0-9]{7,}");
+        assertThat(saida).contains("SELEÇÃO DE CURSO", "[" + curso.id() + "] " + curso.nome(), "Curso: " + curso.nome());
     }
 
     @Test
@@ -114,7 +117,7 @@ class TerminalIntegrationTest {
 
         api.login("secretaria-terminal", "senha-secretaria");
         AlunoResponse outro = api.salvar("POST", "/api/alunos", new AlunoRequest("Outro", "outro-" + sufixo,
-            "senha-outro", "outro@teste.com", "ADS"), AlunoResponse.class);
+            "senha-outro", "outro@teste.com", curso.id()), AlunoResponse.class);
         ProfessorResponse outroProfessor = api.salvar("POST", "/api/professores", new ProfessorRequest("Outro professor",
             "outro-prof-" + sufixo, "senha-outro", "outro@teste.com", "Doutor"), ProfessorResponse.class);
         api.logout();
@@ -135,9 +138,9 @@ class TerminalIntegrationTest {
     void professorConsultaAlunosESemestreConcluidoEntraNoHistorico() {
         api.login("secretaria-terminal", "senha-secretaria");
         AlunoResponse segundo = api.salvar("POST", "/api/alunos", new AlunoRequest("Segundo", "segundo-" + sufixo,
-            "senha-aluno", "segundo@teste.com", "ADS"), AlunoResponse.class);
+            "senha-aluno", "segundo@teste.com", curso.id()), AlunoResponse.class);
         AlunoResponse terceiro = api.salvar("POST", "/api/alunos", new AlunoRequest("Terceiro", "terceiro-" + sufixo,
-            "senha-aluno", "terceiro@teste.com", "ADS"), AlunoResponse.class);
+            "senha-aluno", "terceiro@teste.com", curso.id()), AlunoResponse.class);
         api.logout();
         for (var inscrito : List.of(aluno, segundo, terceiro)) {
             api.login(inscrito.login(), "senha-aluno");
@@ -165,8 +168,38 @@ class TerminalIntegrationTest {
     @Test
     void erroDeValidacaoDoServidorEExibidoNoFormulario() {
         String saida = terminal("secretaria-terminal", "senha-secretaria", "1", "3",
-            "Inválido", "invalido-" + sufixo, "curta", "email-invalido", "ADS", "s", "0", "0", "0");
+            "Inválido", "invalido-" + sufixo, "curta", "email-invalido", curso.id().toString(), "s", "0", "0", "0");
         assertThat(saida).contains("Dados inválidos.", "senha:", "email:").doesNotContain("Cadastro realizado.");
+    }
+
+    @Test
+    void cursoInexistenteReexibeListaEAceitaSomenteIdDeCursoCadastrado() {
+        String login = "selecao-" + sufixo;
+        String saida = terminal("secretaria-terminal", "senha-secretaria", "1", "3",
+            "Seleção", login, "senha-nova", "novo@teste.com", "Engenharia de Dragões", "0", "-1",
+            Long.toString(Long.MAX_VALUE), Long.toString(Long.MAX_VALUE - 1), curso.id().toString(),
+            "s", "0", "0", "0");
+        assertThat(saida).contains("Informe um ID numérico positivo.",
+            "Curso inválido.\nEscolha um dos cursos disponíveis.", "Cadastro realizado.");
+        assertThat(saida.split("Cursos disponíveis:", -1)).hasSize(4);
+        assertThat(saida.split("\\[" + curso.id() + "\\] " + curso.nome(), -1)).hasSize(4);
+        api.login("secretaria-terminal", "senha-secretaria");
+        assertThat(api.listar("/api/alunos", AlunoResponse.class)).filteredOn(a -> a.login().equals(login))
+            .singleElement().satisfies(a -> {
+                assertThat(a.cursoId()).isEqualTo(curso.id());
+                assertThat(a.curso()).isEqualTo(curso.nome());
+            });
+        assertThat(api.listar("/api/cursos", CursoResponse.class)).noneMatch(c -> c.nome().equals("Engenharia de Dragões"));
+    }
+
+    @Test
+    void cancelarSelecaoDoCursoNaoCadastraAluno() {
+        String login = "cancelado-" + sufixo;
+        String saida = terminal("secretaria-terminal", "senha-secretaria", "1", "3",
+            "Cancelado", login, "senha-nova", "novo@teste.com", "/voltar", "0", "0", "0");
+        assertThat(saida).contains("Cursos disponíveis:", "Operação cancelada.").doesNotContain("Cadastro realizado.");
+        api.login("secretaria-terminal", "senha-secretaria");
+        assertThat(api.listar("/api/alunos", AlunoResponse.class)).noneMatch(a -> a.login().equals(login));
     }
 
     private ApiClient cliente() {

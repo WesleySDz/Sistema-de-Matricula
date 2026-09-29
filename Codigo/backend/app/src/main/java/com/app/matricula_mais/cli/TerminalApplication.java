@@ -307,7 +307,28 @@ public class TerminalApplication {
 
     private AlunoRequest formAluno() {
         return new AlunoRequest(io.texto("Nome: "), io.texto("Login: "), io.senha("Senha: "),
-                io.texto("E-mail: "), io.texto("Curso: "));
+                io.texto("E-mail: "), escolherCurso());
+    }
+
+    private long escolherCurso() {
+        io.titulo("SELEÇÃO DE CURSO");
+        while (true) {
+            var cursos = api.listar("/api/cursos", CursoResponse.class);
+            if (cursos.isEmpty()) {
+                io.linha("Nenhum curso cadastrado. Cadastre um curso antes de cadastrar o aluno.");
+                throw new TerminalIO.OperacaoCancelada();
+            }
+            io.linha("Cursos disponíveis:");
+            tela.lista(cursos, curso -> io.linha("[" + curso.id() + "] " + curso.nome()));
+            long id = io.id("Digite o ID do curso desejado: ");
+            try {
+                return api.buscar("/api/cursos/" + id, CursoResponse.class).id();
+            } catch (ApiException ex) {
+                if (ex.status() != 404)
+                    throw ex;
+                io.linha("Curso inválido.\nEscolha um dos cursos disponíveis.");
+            }
+        }
     }
 
     private ProfessorRequest formProfessor() {

@@ -7,10 +7,12 @@ import com.app.matricula_mais.model.*;
 public final class Respostas {
     private Respostas() { }
 
-    public record AlunoResponse(Long id, String nome, String login, String email, String matricula, String curso) {
+    public record AlunoResponse(Long id, String nome, String login, String email, String matricula,
+            Long cursoId, String curso) {
         public static AlunoResponse de(Aluno aluno) {
+            Curso curso = aluno.getCurso();
             return new AlunoResponse(aluno.getId(), aluno.getNome(), aluno.getLogin(), aluno.getEmail(),
-                aluno.getMatricula(), aluno.getCurso());
+                aluno.getMatricula(), curso == null ? null : curso.getId(), curso == null ? null : curso.getNome());
         }
     }
 

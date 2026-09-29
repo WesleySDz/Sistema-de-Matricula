@@ -5,9 +5,11 @@ import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +23,10 @@ public class Aluno extends Usuario {
     @Column(unique = true, updatable = false)
     @Setter(AccessLevel.NONE)
     private String matricula;
-    private String curso;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curso_id")
+    private Curso curso;
 
     @OneToMany(mappedBy = "aluno")
     private List<Matricula> matriculas;
@@ -40,7 +45,7 @@ public class Aluno extends Usuario {
     }
 
     public Aluno(Long id, String nome, String login, String senha, String email,
-                 String matricula, String curso) {
+                 String matricula, Curso curso) {
         super(id, nome, login, senha, email);
         this.matricula = matricula;
         this.curso = curso;

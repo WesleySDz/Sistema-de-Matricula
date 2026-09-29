@@ -52,6 +52,8 @@ O campo de autenticação é **Login**, já existente no projeto. O e-mail perma
 
 A opção `0` volta ao menu anterior ou sai da conta, conforme indicado na tela. Na tela de login, `0` encerra o programa. Use `/voltar` durante o preenchimento de um formulário para cancelar a operação. IDs são exibidos nas consultas; listas de disciplinas são informadas como `1,2,3`, e Enter representa uma lista vazia. Operações de alteração pedem confirmação.
 
+No cadastro e na atualização de alunos, a etapa **SELEÇÃO DE CURSO** consulta os cursos cadastrados e exibe `[ID] Nome`. Informe o ID de um desses cursos. Um ID inexistente apresenta `Curso inválido. Escolha um dos cursos disponíveis.` e repete a lista até uma escolha válida ou `/voltar`. Se não houver cursos, o formulário é cancelado com orientação para cadastrar um curso pelo menu de cursos primeiro.
+
 Em um terminal interativo, a senha não é exibida. Consoles de IDE ou entrada redirecionada podem não fornecer `System.console()`; nesse caso a interface informa que a senha ficará visível. O JAR executado diretamente em um terminal é a opção preferencial.
 
 ### Dados e arquitetura
@@ -133,13 +135,15 @@ POST e PUT de cadastros recebem os mesmos campos. PUT substitui todos os campos 
   "login": "ana",
   "senha": "uma-senha-segura",
   "email": "ana@example.com",
-  "curso": "Sistemas de Informação"
+  "cursoId": 1
 }
 ```
 
 A matrícula do aluno é gerada automaticamente pelo backend e retornada no cadastro e nas consultas. Ela não deve ser enviada no POST ou PUT e não é solicitada pelo terminal. Se um cliente antigo enviar `matricula`, esse campo é ignorado: ele não escolhe nem altera o número.
 
-Para professor, substitua `curso` por `titulacao`. Demais cadastros:
+O campo `cursoId` é obrigatório e deve ser o ID positivo de um curso já cadastrado, consultado em `GET /api/cursos`. O backend verifica sua existência em todo POST e PUT de aluno; nomes livres não substituem o ID e nenhum curso é criado nesse fluxo. A resposta do aluno inclui `cursoId` e `curso` (nome atual do curso selecionado).
+
+Para professor, substitua `cursoId` por `titulacao` (texto). Demais cadastros:
 
 | Recurso | Corpo de exemplo |
 | --- | --- |
@@ -172,8 +176,9 @@ Criações retornam `201`, exclusões e cancelamentos retornam `204`. Erros de e
 - Encerrar inscrições e concluir o semestre letivo são ações diferentes. O histórico usa matrículas ativas de semestres explicitamente concluídos; matrículas canceladas não entram no histórico.
 - O nome do semestre é único e não é editável, pois a entidade inicial `Matricula` guarda esse vínculo como texto. A distinção obrigatória/optativa foi acrescentada à matrícula, conforme o diagrama.
 - O diagrama de classes possui `Turma`, enquanto o código inicial usa `Semestre` e `Disciplina`. Esta implementação preserva o código inicial e representa a oferta pela combinação semestre/disciplina, sem criar uma segunda estrutura concorrente.
-- O campo `Aluno.curso` continua textual, conforme a estrutura inicial. Os cadastros de curso relacionam suas disciplinas, mas não impõem uma restrição adicional de matrícula por curso, ausente nos requisitos.
-- Exclusões que destruiriam vínculos existentes são recusadas com `409`: aluno com matrículas, professor responsável por disciplinas ou disciplina associada a curso/semestre/matrícula. Isso preserva a integridade e o histórico.
+- `Aluno.curso` é uma associação `ManyToOne` para `Curso`, persistida pela chave estrangeira `curso_id`. A seleção consulta `CursoController -> CursoService -> CursoRepository`; o `AlunoService` reutiliza `CursoService.buscarEntidade` antes de salvar. Os cadastros de curso relacionam suas disciplinas, mas não impõem uma restrição adicional de matrícula por curso.
+- Em bancos de versões anteriores, `ddl-auto=update` acrescenta `curso_id`, mas não converte automaticamente o antigo texto `curso` em um vínculo. Alunos antigos continuam acessíveis, com `cursoId` e `curso` nulos na resposta até a seleção de um curso existente pela atualização do cadastro. A coluna antiga é preservada no banco; nenhum curso é criado a partir dela.
+- Exclusões que destruiriam vínculos existentes são recusadas com `409`: aluno com matrículas, curso vinculado a aluno, professor responsável por disciplinas ou disciplina associada a curso/semestre/matrícula. Isso preserva a integridade e o histórico.
 
 ## Integração de cobrança
 
@@ -201,6 +206,8 @@ O envio usa `Idempotency-Key: matricula-{notificacaoId}`. O sistema receptor dev
 
 Os testes cobrem os limites por semestre, duplicidades, período de matrícula, cancelamento, histórico, mínimo de alunos, propriedade de dados, autenticação, CSRF, CRUD e a disputa concorrente pela última vaga.
 
-Os testes da interface executam entradas de terminal contra um servidor HTTP real, verificando o login único dos três perfis, troca de usuário, cadastro, inscrição, cancelamento, consultas do professor, histórico, mensagens de validação e acesso negado mesmo fora dos menus. Há também verificação de entrada inválida, cancelamento de formulário e fim de entrada. Nenhum teste de terminal substitui a segurança por autenticação simulada.
+Os testes de integração da interface executam entradas de terminal contra um servidor HTTP real, verificando o login único dos três perfis, troca de usuário, cadastro, inscrição, cancelamento, consultas do professor, histórico, mensagens de validação e acesso negado mesmo fora dos menus. Há também verificação de entrada inválida, cancelamento de formulário e fim de entrada. Nesses testes de integração, a autenticação passa pelos filtros reais de segurança.
+
+A seleção de curso tem cobertura de ID válido, repetição após IDs inexistentes, entrada textual recusada, cancelamento e ausência de cursos. Os testes da API verificam o vínculo persistido, troca e renomeação do curso, rejeição de IDs inválidos sem cadastros parciais e preservação da chave estrangeira ao tentar excluir um curso em uso.
 
 Os requisitos operacionais de backups, disponibilidade, retenção de auditoria por 12 meses e tempo de resposta sob carga precisam de infraestrutura e validação específicas. Responsividade é uma responsabilidade do frontend. Não são garantidos apenas por estas camadas do backend.

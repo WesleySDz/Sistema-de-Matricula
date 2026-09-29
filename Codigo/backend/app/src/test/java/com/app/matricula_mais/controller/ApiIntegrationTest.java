@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -28,7 +30,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.app.matricula_mais.model.Aluno;
+import com.app.matricula_mais.model.Curso;
 import com.app.matricula_mais.repository.AlunoRepository;
+import com.app.matricula_mais.repository.CursoRepository;
 import com.app.matricula_mais.security.UsuarioAutenticado;
 
 import tools.jackson.databind.ObjectMapper;
@@ -40,6 +44,8 @@ class ApiIntegrationTest {
     MockMvc mvc;
     @Autowired
     AlunoRepository alunos;
+    @Autowired
+    CursoRepository cursos;
     @Autowired
     PasswordEncoder encoder;
     @Autowired
@@ -60,24 +66,27 @@ class ApiIntegrationTest {
     @Test
     void crudDeAlunoProtegeSenhaEValidaDuplicidade() throws Exception {
         String login = "crud-" + UUID.randomUUID();
+        Curso curso = novoCurso();
         String corpo = """
                 {"nome":"Ana","login":"%s","senha":"senha-segura","email":"ana@teste.com",
-                 "curso":"ADS"}
-                """.formatted(login);
+                 "cursoId":%d}
+                """.formatted(login, curso.getId());
         var resultado = mvc.perform(post("/api/alunos").with(perfil("SECRETARIA")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isCreated()).andExpect(header().exists("Location"))
+                .andExpect(jsonPath("cursoId").value(curso.getId())).andExpect(jsonPath("curso").value(curso.getNome()))
                 .andExpect(jsonPath("senha").doesNotExist()).andReturn();
         long id = json.readTree(resultado.getResponse().getContentAsString()).get("id").asLong();
         String matricula = json.readTree(resultado.getResponse().getContentAsString()).get("matricula").asText();
         assertThat(matricula).matches("[0-9]{7,}");
+        assertThat(alunos.findById(id).orElseThrow().getCurso().getId()).isEqualTo(curso.getId());
         assertThat(encoder.matches("senha-segura", alunos.findById(id).orElseThrow().getSenha())).isTrue();
         mvc.perform(post("/api/alunos").with(perfil("SECRETARIA")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict());
         mvc.perform(put("/api/alunos/{id}", id).with(perfil("SECRETARIA")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(corpo.replace("Ana", "Ana Maria")
-                    .replace("\"curso\":", "\"matricula\":\"9999999\",\"curso\":")))
+                    .replace("\"cursoId\":", "\"matricula\":\"9999999\",\"cursoId\":")))
                 .andExpect(status().isOk()).andExpect(jsonPath("nome").value("Ana Maria"))
                 .andExpect(jsonPath("matricula").value(matricula));
         mvc.perform(get("/api/alunos/{id}", id).with(perfil("SECRETARIA")))
@@ -91,10 +100,11 @@ class ApiIntegrationTest {
     @Test
     void clienteNaoEscolheMatriculaNemNoCadastro() throws Exception {
         String login = "automatica-" + UUID.randomUUID();
+        Curso curso = novoCurso();
         String corpo = """
             {"nome":"Ana","login":"%s","senha":"senha-segura","email":"ana@teste.com",
-             "matricula":"ESCOLHIDA-PELO-CLIENTE","curso":"ADS"}
-            """.formatted(login);
+             "matricula":"ESCOLHIDA-PELO-CLIENTE","cursoId":%d}
+            """.formatted(login, curso.getId());
         var resultado = mvc.perform(post("/api/alunos").with(perfil("SECRETARIA")).with(csrf())
             .contentType(MediaType.APPLICATION_JSON).content(corpo))
             .andExpect(status().isCreated()).andReturn();
@@ -193,6 +203,68 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk()).andExpect(content().json("[]"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", ",\"curso\":\"Engenharia de Dragões\"", ",\"cursoId\":null",
+        ",\"cursoId\":0", ",\"cursoId\":-1", ",\"cursoId\":\"Engenharia de Dragões\""})
+    void cadastroExigeIdDeCursoPositivoSemCriarAlunoOuCurso(String campoCurso) throws Exception {
+        long totalAlunos = alunos.count();
+        long totalCursos = cursos.count();
+        String corpo = """
+            {"nome":"Ana","login":"%s","senha":"senha-segura","email":"ana@teste.com"%s}
+            """.formatted(UUID.randomUUID(), campoCurso);
+        mvc.perform(post("/api/alunos").with(perfil("SECRETARIA")).with(csrf())
+            .contentType(MediaType.APPLICATION_JSON).content(corpo))
+            .andExpect(status().isBadRequest());
+        assertThat(alunos.count()).isEqualTo(totalAlunos);
+        assertThat(cursos.count()).isEqualTo(totalCursos);
+    }
+
+    @Test
+    void cursoInexistenteNaoCadastraAlunoNemAlteraCadastroExistente() throws Exception {
+        Aluno aluno = novoAluno();
+        Long cursoId = aluno.getCurso().getId();
+        long totalAlunos = alunos.count();
+        long totalCursos = cursos.count();
+        String corpo = """
+            {"nome":"Alterado","login":"%s","senha":"senha-segura","email":"ana@teste.com","cursoId":%d}
+            """.formatted(UUID.randomUUID(), Long.MAX_VALUE);
+        mvc.perform(post("/api/alunos").with(perfil("SECRETARIA")).with(csrf())
+            .contentType(MediaType.APPLICATION_JSON).content(corpo))
+            .andExpect(status().isNotFound());
+        mvc.perform(put("/api/alunos/{id}", aluno.getId()).with(perfil("SECRETARIA")).with(csrf())
+            .contentType(MediaType.APPLICATION_JSON).content(corpo))
+            .andExpect(status().isNotFound());
+        Aluno preservado = alunos.findById(aluno.getId()).orElseThrow();
+        assertThat(preservado.getNome()).isEqualTo(aluno.getNome());
+        assertThat(preservado.getLogin()).isEqualTo(aluno.getLogin());
+        assertThat(preservado.getCurso().getId()).isEqualTo(cursoId);
+        assertThat(alunos.count()).isEqualTo(totalAlunos);
+        assertThat(cursos.count()).isEqualTo(totalCursos);
+    }
+
+    @Test
+    void atualizacaoTrocaVinculoEConsultaRefleteRenomeacaoDoCurso() throws Exception {
+        Aluno aluno = novoAluno();
+        Curso curso = novoCurso();
+        long totalCursos = cursos.count();
+        String corpo = """
+            {"nome":"Ana","login":"%s","senha":"senha-segura","email":"ana@teste.com","cursoId":%d}
+            """.formatted(aluno.getLogin(), curso.getId());
+        mvc.perform(put("/api/alunos/{id}", aluno.getId()).with(perfil("SECRETARIA")).with(csrf())
+            .contentType(MediaType.APPLICATION_JSON).content(corpo))
+            .andExpect(status().isOk()).andExpect(jsonPath("cursoId").value(curso.getId()))
+            .andExpect(jsonPath("matricula").value(aluno.getMatricula()));
+        assertThat(alunos.findById(aluno.getId()).orElseThrow().getCurso().getId()).isEqualTo(curso.getId());
+        curso.setNome("Sistemas de Informação");
+        cursos.saveAndFlush(curso);
+        mvc.perform(get("/api/alunos/{id}", aluno.getId()).with(perfil("SECRETARIA")))
+            .andExpect(status().isOk()).andExpect(jsonPath("curso").value("Sistemas de Informação"));
+        mvc.perform(delete("/api/cursos/{id}", curso.getId()).with(perfil("SECRETARIA")).with(csrf()))
+            .andExpect(status().isConflict());
+        assertThat(cursos.count()).isEqualTo(totalCursos);
+        assertThat(alunos.existsById(aluno.getId())).isTrue();
+    }
+
     private long criar(String rota, String corpo) throws Exception {
         var resultado = mvc.perform(post(rota).with(perfil("SECRETARIA")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(corpo))
@@ -203,7 +275,11 @@ class ApiIntegrationTest {
     private Aluno novoAluno() {
         String login = UUID.randomUUID().toString();
         return alunos
-                .save(new Aluno(null, "Ana", login, encoder.encode("senha-segura"), "ana@teste.com", login, "ADS"));
+                .save(new Aluno(null, "Ana", login, encoder.encode("senha-segura"), "ana@teste.com", login, novoCurso()));
+    }
+
+    private Curso novoCurso() {
+        return cursos.save(new Curso(null, "ADS", 120));
     }
 
     private RequestPostProcessor perfil(String perfil) {

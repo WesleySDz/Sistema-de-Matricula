@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -17,7 +18,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.app.matricula_mais.dto.Requisicoes.AlunoRequest;
 import com.app.matricula_mais.dto.Respostas.AlunoResponse;
 import com.app.matricula_mais.model.Aluno;
+import com.app.matricula_mais.model.Curso;
 import com.app.matricula_mais.repository.AlunoRepository;
+import com.app.matricula_mais.repository.CursoRepository;
 import com.app.matricula_mais.repository.UsuarioRepository;
 
 @SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:geracao-matriculas-tests;DB_CLOSE_DELAY=-1")
@@ -26,6 +29,13 @@ class GeracaoMatriculaAlunoIntegrationTest {
     @Autowired AlunoRepository alunos;
     @Autowired UsuarioRepository usuarios;
     @Autowired PlatformTransactionManager transactionManager;
+    @Autowired CursoRepository cursos;
+    private Curso curso;
+
+    @BeforeEach
+    void cadastrarCurso() {
+        curso = cursos.saveAndFlush(new Curso(null, "ADS", 120));
+    }
 
     @Test
     void emiteNumerosConsecutivosPreservaNaEdicaoENaoReutilizaAposExcluir() {
@@ -47,7 +57,7 @@ class GeracaoMatriculaAlunoIntegrationTest {
         AlunoResponse base = service.cadastrar(dados());
         String numeroLegado = Long.toString(Long.parseLong(base.matricula()) + 1);
         Aluno legado = alunos.saveAndFlush(new Aluno(null, "Legado", UUID.randomUUID().toString(), "hash",
-            "legado@teste.com", numeroLegado, "ADS"));
+            "legado@teste.com", numeroLegado, curso));
         AlunoResponse novo = service.cadastrar(dados());
         assertThat(novo.matricula()).isEqualTo(Long.toString(Long.parseLong(numeroLegado) + 1));
         assertThat(alunos.findById(legado.getId()).orElseThrow().getMatricula()).isEqualTo(numeroLegado);
@@ -88,6 +98,6 @@ class GeracaoMatriculaAlunoIntegrationTest {
     }
 
     private AlunoRequest dados() {
-        return new AlunoRequest("Aluno", UUID.randomUUID().toString(), "senha-segura", "aluno@teste.com", "ADS");
+        return new AlunoRequest("Aluno", UUID.randomUUID().toString(), "senha-segura", "aluno@teste.com", curso.getId());
     }
 }

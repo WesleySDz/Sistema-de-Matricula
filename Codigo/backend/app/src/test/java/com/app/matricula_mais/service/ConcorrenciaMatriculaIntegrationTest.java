@@ -16,10 +16,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.app.matricula_mais.dto.Requisicoes.MatriculaRequest;
 import com.app.matricula_mais.exception.RegraNegocioException;
 import com.app.matricula_mais.model.Aluno;
+import com.app.matricula_mais.model.Curso;
 import com.app.matricula_mais.model.Disciplina;
 import com.app.matricula_mais.model.Matricula;
 import com.app.matricula_mais.model.Semestre;
 import com.app.matricula_mais.repository.AlunoRepository;
+import com.app.matricula_mais.repository.CursoRepository;
 import com.app.matricula_mais.repository.DisciplinaRepository;
 import com.app.matricula_mais.repository.MatriculaRepository;
 import com.app.matricula_mais.repository.SemestreRepository;
@@ -38,10 +40,14 @@ class ConcorrenciaMatriculaIntegrationTest {
     MatriculaRepository matriculas;
     @Autowired
     PlatformTransactionManager transactionManager;
+    @Autowired
+    CursoRepository cursos;
+    private Curso curso;
 
     @Test
     void duasInscricoesConcorrentesDisputamUmaUnicaVaga() throws Exception {
         Long[] ids = new TransactionTemplate(transactionManager).execute(status -> {
+            curso = cursos.save(new Curso(null, "ADS", 120));
             Disciplina disciplina = disciplinas.save(new Disciplina(null, "CONCORRENTE", "Disciplina", 4));
             Semestre semestre = new Semestre(null, "concorrencia/1");
             semestre.gerarCurriculo(List.of(disciplina));
@@ -77,6 +83,6 @@ class ConcorrenciaMatriculaIntegrationTest {
     }
 
     private Aluno novoAluno(String login) {
-        return alunos.save(new Aluno(null, "Aluno", login, "hash", "aluno@teste.com", login, "ADS"));
+        return alunos.save(new Aluno(null, "Aluno", login, "hash", "aluno@teste.com", login, curso));
     }
 }
