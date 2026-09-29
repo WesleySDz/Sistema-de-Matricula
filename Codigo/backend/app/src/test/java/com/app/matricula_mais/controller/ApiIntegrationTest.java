@@ -77,7 +77,7 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("cursoId").value(curso.getId())).andExpect(jsonPath("curso").value(curso.getNome()))
                 .andExpect(jsonPath("senha").doesNotExist()).andReturn();
         long id = json.readTree(resultado.getResponse().getContentAsString()).get("id").asLong();
-        String matricula = json.readTree(resultado.getResponse().getContentAsString()).get("matricula").asText();
+        String matricula = json.readTree(resultado.getResponse().getContentAsString()).get("matricula").asString();
         assertThat(matricula).matches("[0-9]{7,}");
         assertThat(alunos.findById(id).orElseThrow().getCurso().getId()).isEqualTo(curso.getId());
         assertThat(encoder.matches("senha-segura", alunos.findById(id).orElseThrow().getSenha())).isTrue();
@@ -109,9 +109,9 @@ class ApiIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON).content(corpo))
             .andExpect(status().isCreated()).andReturn();
         var aluno = json.readTree(resultado.getResponse().getContentAsString());
-        assertThat(aluno.get("matricula").asText()).matches("[0-9]{7,}");
+                assertThat(aluno.get("matricula").asString()).matches("[0-9]{7,}");
         assertThat(alunos.findById(aluno.get("id").asLong()).orElseThrow().getMatricula())
-            .isEqualTo(aluno.get("matricula").asText());
+                        .isEqualTo(aluno.get("matricula").asString());
     }
 
     @Test

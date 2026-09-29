@@ -2,13 +2,22 @@ package com.app.matricula_mais.service;
 
 import java.util.HashSet;
 import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.app.matricula_mais.dto.Requisicoes.DisciplinaRequest;
 import com.app.matricula_mais.dto.Respostas.DisciplinaResponse;
-import com.app.matricula_mais.exception.*;
-import com.app.matricula_mais.model.*;
-import com.app.matricula_mais.repository.*;
+import com.app.matricula_mais.exception.RecursoNaoEncontradoException;
+import com.app.matricula_mais.exception.RegraNegocioException;
+import com.app.matricula_mais.model.Disciplina;
+import com.app.matricula_mais.model.Professor;
+import com.app.matricula_mais.repository.CursoRepository;
+import com.app.matricula_mais.repository.DisciplinaRepository;
+import com.app.matricula_mais.repository.MatriculaRepository;
+import com.app.matricula_mais.repository.ProfessorRepository;
+import com.app.matricula_mais.repository.SemestreRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -65,7 +74,11 @@ public class DisciplinaService {
     }
 
     private DisciplinaResponse salvar(Disciplina disciplina, DisciplinaRequest dados) {
-        if (disciplinas.existsByCodigoAndIdNot(dados.codigo(), disciplina.getId() == null ? -1L : disciplina.getId())) {
+        Long id = disciplina.getId();
+        if (id == null) {
+            id = -1L;
+        }
+        if (disciplinas.existsByCodigoAndIdNot(dados.codigo(), id)) {
             throw new RegraNegocioException("Código de disciplina já cadastrado.");
         }
         Professor professor = professores.findById(dados.professorId())

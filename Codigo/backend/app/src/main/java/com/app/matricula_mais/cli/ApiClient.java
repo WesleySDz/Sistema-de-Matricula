@@ -11,7 +11,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+
 import com.app.matricula_mais.security.UsuarioAutenticado;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -121,9 +123,9 @@ public class ApiClient implements AutoCloseable {
         try {
             JsonNode erro = json.readTree(corpo);
             if (erro != null && erro.hasNonNull("detail")) {
-                StringBuilder mensagem = new StringBuilder(erro.get("detail").asText());
+                StringBuilder mensagem = new StringBuilder(erro.get("detail").asString());
                 if (erro.has("campos") && erro.get("campos").isArray()) {
-                    erro.get("campos").forEach(campo -> mensagem.append("\n- ").append(campo.asText()));
+                    erro.get("campos").forEach(campo -> mensagem.append("\n- ").append(campo.asString()));
                 }
                 return mensagem.toString();
             }
@@ -157,7 +159,8 @@ public class ApiClient implements AutoCloseable {
     @Override
     public void close() {
         limparSessao();
-        http.close();
+        try (http) {
+        }
     }
 
     public record Csrf(String headerName, String parameterName, String token) { }

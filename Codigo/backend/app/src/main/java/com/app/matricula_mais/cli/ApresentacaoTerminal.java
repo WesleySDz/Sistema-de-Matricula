@@ -3,7 +3,6 @@ package com.app.matricula_mais.cli;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.app.matricula_mais.dto.Respostas.*;
 import com.app.matricula_mais.dto.Respostas.AlunoResponse;
 import com.app.matricula_mais.dto.Respostas.CursoResponse;
 import com.app.matricula_mais.dto.Respostas.DisciplinaResponse;

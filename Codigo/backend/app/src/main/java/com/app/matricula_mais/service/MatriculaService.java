@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.app.matricula_mais.dto.Requisicoes.MatriculaRequest;
-import com.app.matricula_mais.dto.Respostas.*;
 import com.app.matricula_mais.dto.Respostas.DisciplinaResponse;
 import com.app.matricula_mais.dto.Respostas.MatriculaResponse;
 import com.app.matricula_mais.exception.RecursoNaoEncontradoException;

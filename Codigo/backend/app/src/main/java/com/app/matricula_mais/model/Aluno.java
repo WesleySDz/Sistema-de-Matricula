@@ -3,17 +3,17 @@ package com.app.matricula_mais.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.AccessLevel;
 
 @Entity
 @Getter
@@ -75,9 +75,9 @@ public class Aluno extends Usuario {
 
     public List<Disciplina> consultarMatriculaAtual() {
         List<Disciplina> disciplinasAtivas = new ArrayList<>();
-        for (Matricula matricula : matriculas) {
-            if (matricula.isAtiva()) {
-                disciplinasAtivas.add(matricula.getDisciplina());
+        for (Matricula inscricao : matriculas) {
+            if (inscricao.isAtiva()) {
+                disciplinasAtivas.add(inscricao.getDisciplina());
             }
         }
         return disciplinasAtivas;

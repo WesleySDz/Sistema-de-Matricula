@@ -60,7 +60,7 @@ class MatriculaServiceIntegrationTest {
     private List<Disciplina> oferta;
 
     @BeforeEach
-    void preparar() {
+    public void preparar() {
         aluno = novoAluno("principal");
         professor = professores
                 .save(new Professor(null, "Docente", "docente-teste", "hash", "docente@teste.com", "Mestre"));

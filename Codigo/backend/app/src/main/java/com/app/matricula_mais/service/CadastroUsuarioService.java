@@ -1,11 +1,14 @@
 package com.app.matricula_mais.service;
 
 import java.nio.charset.StandardCharsets;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import com.app.matricula_mais.exception.RegraNegocioException;
 import com.app.matricula_mais.model.Usuario;
 import com.app.matricula_mais.repository.UsuarioRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -15,7 +18,10 @@ public class CadastroUsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     public void preencher(Usuario usuario, String nome, String login, String senha, String email) {
-        Long id = usuario.getId() == null ? -1L : usuario.getId();
+        Long id = usuario.getId();
+        if (id == null) {
+            id = -1L;
+        }
         if (usuarios.existsByLoginAndIdNot(login, id)) {
             throw new RegraNegocioException("Login já cadastrado.");
         }

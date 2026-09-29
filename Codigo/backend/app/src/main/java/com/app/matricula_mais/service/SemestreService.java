@@ -7,10 +7,8 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.matricula_mais.dto.Requisicoes.*;
 import com.app.matricula_mais.dto.Requisicoes.CurriculoRequest;
 import com.app.matricula_mais.dto.Requisicoes.SemestreRequest;
-import com.app.matricula_mais.dto.Respostas.*;
 import com.app.matricula_mais.dto.Respostas.DisciplinaResponse;
 import com.app.matricula_mais.dto.Respostas.SemestreResponse;
 import com.app.matricula_mais.dto.Respostas.SituacaoDisciplinaResponse;
