@@ -1,8 +1,77 @@
-# API Matrícula Mais
+# Matrícula Mais — terminal e API
 
 Controllers REST e services baseados nos RF-001 a RF-018 e nas RN-001 a RN-007 dos documentos em `Artefatos`. O projeto mantém Java 26, Spring Boot 4.1.1 e as entidades da estrutura inicial.
 
-## Execução
+## Interface de terminal
+
+O projeto pode ser utilizado pelo terminal com um único login para todos os usuários. O perfil é identificado pelo backend a partir da conta autenticada: `SECRETARIA`, `ALUNO` ou `PROFESSOR`. Não há seleção manual de perfil nem logins separados.
+
+Os iniciadores requerem o **JDK 26**, com `java` disponível no PATH. Na pasta `Codigo/backend/app`, configure a primeira conta de secretaria e execute conforme seu sistema.
+
+**Linux e macOS (Bash):**
+
+```bash
+read -r -p "Login inicial da secretaria: " SECRETARIA_LOGIN
+read -r -s -p "Senha inicial (mínimo 8 caracteres): " SECRETARIA_SENHA
+export SECRETARIA_LOGIN SECRETARIA_SENHA
+./terminal.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$credencial = Get-Credential -Message "Primeira conta da secretaria (senha com mínimo de 8 caracteres)"
+$env:SECRETARIA_LOGIN = $credencial.UserName
+$env:SECRETARIA_SENHA = $credencial.GetNetworkCredential().Password
+.\terminal.cmd
+```
+
+No Prompt de Comando (CMD), o iniciador é `terminal.cmd`; as variáveis `SECRETARIA_LOGIN` e `SECRETARIA_SENHA` devem estar configuradas no ambiente para criar a primeira conta.
+
+Os scripts compilam o projeto e iniciam o terminal e o backend no mesmo processo Java. A primeira compilação precisa das dependências Maven disponíveis. Depois que a conta estiver criada, as variáveis não são necessárias: execute apenas `./terminal.sh` no Linux/macOS ou `.\terminal.cmd` no Windows. As credenciais de contas existentes não são sobrescritas na inicialização. Os iniciadores usam a pasta do backend como diretório de trabalho, mesmo quando chamados de outra pasta.
+
+Também é possível compilar e iniciar manualmente, inclusive no Windows:
+
+```bash
+./mvnw package
+java -jar target/matricula-mais-0.0.1-SNAPSHOT.jar --spring.profiles.active=terminal
+```
+
+No PowerShell, substitua `./mvnw package` por `.\mvnw.cmd package`. O comando `java -jar` é o mesmo nos três sistemas. Execute o JAR a partir da pasta do backend para manter o mesmo diretório de dados. O arquivo `.sh` não é necessário no Windows.
+
+O campo de autenticação é **Login**, já existente no projeto. O e-mail permanece um dado cadastral; se desejar usá-lo como identificador, informe esse endereço também no campo `login` ao cadastrar a conta.
+
+### Menus por perfil
+
+| Perfil | Funcionalidades no terminal |
+| --- | --- |
+| Secretaria | Cadastrar, listar, consultar, atualizar e excluir alunos, professores, disciplinas e cursos; cadastrar semestres; definir currículos; consultar matrículas e situação das ofertas; encerrar matrículas e concluir o semestre letivo. |
+| Aluno | Consultar ofertas, realizar matrícula, consultar matrículas e detalhes das disciplinas, cancelar matrícula própria e consultar histórico. |
+| Professor | Consultar suas disciplinas, os respectivos alunos e os currículos dos semestres. |
+| Todos | Consultar o próprio perfil e sair da conta para permitir novo login. |
+
+A opção `0` volta ao menu anterior ou sai da conta, conforme indicado na tela. Na tela de login, `0` encerra o programa. Use `/voltar` durante o preenchimento de um formulário para cancelar a operação. IDs são exibidos nas consultas; listas de disciplinas são informadas como `1,2,3`, e Enter representa uma lista vazia. Operações de alteração pedem confirmação.
+
+Em um terminal interativo, a senha não é exibida. Consoles de IDE ou entrada redirecionada podem não fornecer `System.console()`; nesse caso a interface informa que a senha ficará visível. O JAR executado diretamente em um terminal é a opção preferencial.
+
+### Dados e arquitetura
+
+O perfil `terminal` usa **H2 em arquivo** (`data/matricula-mais.mv.db`) e conserva os cadastros entre execuções. Os logs técnicos ficam em `data/matricula-mais.log`, fora dos menus. Esses arquivos são ignorados pelo Git. Não execute duas instâncias usando o mesmo arquivo de banco.
+
+```text
+CLI (menus e formulários)
+    -> ApiClient (HTTP local, cookie de sessão e CSRF)
+    -> Spring Security (autenticação e autorização)
+    -> Controllers existentes
+    -> Services existentes
+    -> Repositories -> Banco de dados
+```
+
+O backend escuta apenas em `127.0.0.1`, em uma porta livre escolhida automaticamente. A interface não acessa repositories ou services diretamente e não decide se uma operação de negócio é válida. As restrições de `role` e de propriedade dos dados são verificadas no servidor, inclusive se uma rota for chamada fora dos menus. As validações e mensagens de erro dos endpoints são apresentadas ao usuário. Sessão expirada exige novo login.
+
+O ponto de entrada apenas inicia o Spring e, quando `app.cli.enabled=true`, executa a interface e fecha a aplicação ao sair. Um futuro frontend pode consumir as mesmas rotas sem reimplementar autenticação, autorização ou regras de matrícula.
+
+## Execução apenas da API
 
 Na pasta `Codigo/backend/app`, configure `SECRETARIA_LOGIN` e `SECRETARIA_SENHA` (ao menos oito caracteres) no ambiente e execute:
 
@@ -12,14 +81,14 @@ Na pasta `Codigo/backend/app`, configure `SECRETARIA_LOGIN` e `SECRETARIA_SENHA`
 
 Essas variáveis criam a primeira conta de secretaria caso o login ainda não exista. Não há credenciais padrão nem cadastro público. Alunos e professores são cadastrados pela secretaria. Senhas são armazenadas com BCrypt; nunca são retornadas pela API.
 
-O H2 em memória e `ddl-auto=create-drop` da estrutura inicial foram mantidos: os dados, inclusive notificações pendentes e bloqueios de login, são perdidos ao reiniciar. Para implantação, configure um banco persistente e migrações antes de utilizar dados reais.
+Tanto a API quanto o terminal usam o H2 em arquivo (`data/matricula-mais.mv.db`) e preservam os cadastros e a sequência de matrículas entre execuções. Para implantação web, configure o banco e as migrações adequados ao ambiente. Apenas os testes usam bancos em memória, sem acessar os dados locais.
 
 ## Autenticação e CSRF
 
 1. Faça `GET /api/auth/csrf`, preservando o cookie de sessão. A resposta contém `token`, `headerName` e `parameterName`.
 2. Faça `POST /api/auth/login` com `Content-Type: application/x-www-form-urlencoded`, campos `login` e `senha`, e o token CSRF no cabeçalho indicado. Sucesso retorna `204`; credenciais inválidas, `401`; conta bloqueada, `423`.
 3. Consulte novamente `/api/auth/csrf` após o login, pois o token é renovado. Preserve o cookie e envie o token nas operações POST, PUT e DELETE.
-4. `GET /api/auth/me` retorna o identificador e o perfil da sessão. `POST /api/auth/logout` encerra a sessão e retorna `204`.
+4. `GET /api/auth/me` retorna identificador, login, nome, e-mail e perfil da sessão. `POST /api/auth/logout` encerra a sessão e retorna `204`.
 
 A sessão expira após 30 minutos sem interação. Cinco falhas consecutivas bloqueiam a conta por 15 minutos; o contador é persistido mesmo quando a autenticação falha. Uma autenticação bem-sucedida zera o contador.
 
@@ -64,12 +133,13 @@ POST e PUT de cadastros recebem os mesmos campos. PUT substitui todos os campos 
   "login": "ana",
   "senha": "uma-senha-segura",
   "email": "ana@example.com",
-  "matricula": "20260001",
   "curso": "Sistemas de Informação"
 }
 ```
 
-Para professor, substitua `matricula` e `curso` por `titulacao`. Demais cadastros:
+A matrícula do aluno é gerada automaticamente pelo backend e retornada no cadastro e nas consultas. Ela não deve ser enviada no POST ou PUT e não é solicitada pelo terminal. Se um cliente antigo enviar `matricula`, esse campo é ignorado: ele não escolhe nem altera o número.
+
+Para professor, substitua `curso` por `titulacao`. Demais cadastros:
 
 | Recurso | Corpo de exemplo |
 | --- | --- |
@@ -94,6 +164,8 @@ Criações retornam `201`, exclusões e cancelamentos retornam `204`. Erros de e
 
 ## Regras e decisões de modelagem
 
+- Cada novo aluno recebe uma matrícula numérica a partir de `1000001`. A emissão usa uma identidade gerada pelo banco, registrada separadamente e na mesma transação do cadastro. Esse registro permanece mesmo após excluir o aluno, evitando reutilização de números. Cadastros simultâneos recebem números distintos.
+- O número é persistido e imutável nas atualizações. Matrículas antigas são mantidas; números já ocupados por cadastros legados são pulados. A sequência pode ter intervalos após transações canceladas ou colisões com números antigos.
 - O limite é de quatro obrigatórias e duas optativas por aluno e semestre, contando inscrições anteriores ainda ativas.
 - A capacidade de 60 alunos considera a oferta da disciplina em cada semestre. Alterações no currículo, encerramentos, inscrições e cancelamentos usam um bloqueio transacional no semestre para coordenar requisições simultâneas.
 - O encerramento das matrículas cancela ofertas com menos de três alunos e desativa suas matrículas. A situação é armazenada por semestre, sem desativar o cadastro global da disciplina.
@@ -128,5 +200,7 @@ O envio usa `Idempotency-Key: matricula-{notificacaoId}`. O sistema receptor dev
 ```
 
 Os testes cobrem os limites por semestre, duplicidades, período de matrícula, cancelamento, histórico, mínimo de alunos, propriedade de dados, autenticação, CSRF, CRUD e a disputa concorrente pela última vaga.
+
+Os testes da interface executam entradas de terminal contra um servidor HTTP real, verificando o login único dos três perfis, troca de usuário, cadastro, inscrição, cancelamento, consultas do professor, histórico, mensagens de validação e acesso negado mesmo fora dos menus. Há também verificação de entrada inválida, cancelamento de formulário e fim de entrada. Nenhum teste de terminal substitui a segurança por autenticação simulada.
 
 Os requisitos operacionais de backups, disponibilidade, retenção de auditoria por 12 meses e tempo de resposta sob carga precisam de infraestrutura e validação específicas. Responsividade é uma responsabilidade do frontend. Não são garantidos apenas por estas camadas do backend.

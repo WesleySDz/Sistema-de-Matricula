@@ -12,11 +12,21 @@ public final class Requisicoes {
 
     public record AlunoRequest(@NotBlank String nome, @NotBlank String login,
             @NotBlank @Size(min = 8, max = 72) String senha, @NotBlank @Email String email,
-            @NotBlank String matricula, @NotBlank String curso) { }
+            @NotBlank String curso) {
+        @Override
+        public String toString() {
+            return "AlunoRequest[credenciais protegidas]";
+        }
+    }
 
     public record ProfessorRequest(@NotBlank String nome, @NotBlank String login,
             @NotBlank @Size(min = 8, max = 72) String senha, @NotBlank @Email String email,
-            @NotBlank String titulacao) { }
+            @NotBlank String titulacao) {
+        @Override
+        public String toString() {
+            return "ProfessorRequest[credenciais protegidas]";
+        }
+    }
 
     public record CursoRequest(@NotBlank String nome, @Positive int quantidadeCreditos,
             @NotNull List<@NotNull @Positive Long> disciplinaIds) { }
