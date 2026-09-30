@@ -111,6 +111,35 @@ JOIN disciplina d ON d.id = m.disciplina_id;
 
 Alunos, professores e funcionários são armazenados na tabela `usuario`, com o tipo na coluna `dtype`, conforme a herança JPA existente. Cursos, disciplinas e matrículas têm suas próprias tabelas, e as associações de curso/semestre com disciplinas são persistidas em tabelas de relacionamento.
 
+#### Importar a conexão no DBCode (VS Code)
+
+Encerre a aplicação e desconecte outros clientes que estejam usando o mesmo arquivo. Na criação de uma conexão **H2 Database**, clique em **Import connection string**, cole a URL JDBC com o caminho absoluto do banco neste computador e clique em **Import**. Exemplo para o checkout Linux atual:
+
+```text
+jdbc:h2:file:/home/vazwa/Documentos/Sistema-de-Matricula/Codigo/backend/app/data/matricula-mais;IFEXISTS=TRUE
+```
+
+Confira o modo **Embedded (File)**, o usuário `sa` e a senha vazia, conforme a configuração padrão do backend. A URL JDBC não leva a extensão `.mv.db`; ao selecionar o arquivo pelo botão **File**, escolha `matricula-mais.mv.db`. Clique em **Test** e em **Save connection**, depois abra **PUBLIC → Tables**.
+
+O importador da versão 1.38.7 do DBCode extrai o caminho, mas descarta os parâmetros após `;`. Portanto, não dependa apenas de `IFEXISTS=TRUE` na string importada: confira o caminho e mantenha `driverOptions.ifExists: true` na configuração da conexão, como na conexão do projeto.
+
+Ao trocar de computador, ajuste o campo `socket` da conexão em `.vscode/settings.json` para o caminho local, sem `.mv.db`. Um caminho do Windows como `C:/Users/Wesley/Documents/...` não aponta para o banco deste checkout Linux. A conexão **Matrícula H2 - dados do projeto** estava com esse caminho antigo e foi corrigida para o caminho Linux do exemplo acima. Se `MATRICULA_DATA_DIR` estiver definido, use o banco dessa pasta.
+
+Conexões com nomes semelhantes podem ter configurações diferentes: **Matricula H2**, salva nas configurações do usuário, e **Matrícula H2 - dados do projeto**, salva no workspace, são conexões distintas. Desconecte a primeira antes de abrir a segunda no mesmo arquivo.
+
+Se **Tables** estiver vazio, atualize a árvore de conexões e execute nesta conexão:
+
+```sql
+SELECT DATABASE_PATH();
+
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'BASE TABLE'
+ORDER BY TABLE_NAME;
+```
+
+O primeiro resultado deve corresponder ao caminho do banco usado pelo backend, sem `.mv.db`. Se for diferente, corrija a conexão. Se a consulta listar tabelas, mas a árvore continuar vazia, a listagem da extensão precisa ser investigada; isso não indica perda dos dados. Na verificação do arquivo local foram encontradas 12 tabelas, incluindo `USUARIO`, `CURSO`, `DISCIPLINA`, `MATRICULA` e `SEMESTRE`. O caminho antigo explicava a falha da conexão do projeto; a causa da árvore vazia na outra conexão não foi confirmada.
+
 ### Caminho das operações
 
 ```text
